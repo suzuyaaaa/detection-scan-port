@@ -18,7 +18,7 @@ __pycache__/
 Thumbs.db
 
 # Modèles ML temporaires (optionnel)
-*.pkl
+#*.pkl
 
 # Dataset volumineux (optionnel, si tu ne veux pas pousser)
-*.csv
+#*.csv
