@@ -1,0 +1,24 @@
+# Ignorer l'environnement virtuel
+venv/
+
+# Fichiers Python compilés
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Fichiers journaux
+*.log
+
+# Dossier VS Code
+.vscode/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Modèles ML temporaires (optionnel)
+*.pkl
+
+# Dataset volumineux (optionnel, si tu ne veux pas pousser)
+*.csv

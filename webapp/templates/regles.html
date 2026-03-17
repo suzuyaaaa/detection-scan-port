@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% set page = "regles" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="fw-bold">Règles de Détection</h1>
+    <p class="text-secondary">Configuration des seuils et paramètres de détection</p>
+  </div>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRegle">
+    <i class="bi bi-plus me-1"></i>Nouvelle Règle
+  </button>
+</div>
+
+<!-- Tableau -->
+<div class="card mb-4">
+  <div class="card-header">Règles Configurées</div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr><th>Nom</th><th>Type de Scan</th><th>Seuil</th><th>Statut</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for r in regles %}
+        <tr>
+          <td class="fw-medium">{{ r.nom }}</td>
+          <td>{{ r.type_scan }} Scan</td>
+          <td class="font-monospace">{{ r.seuil }}</td>
+          <td>
+            <a href="/regles/toggle/{{ r.id }}">
+              {% if r.active %}
+                <span class="badge bg-success">Active</span>
+              {% else %}
+                <span class="badge bg-secondary">Inactive</span>
+              {% endif %}
+            </a>
+          </td>
+          <td>
+            <a href="/regles/supprimer/{{ r.id }}" class="btn btn-sm btn-outline-danger"
+               onclick="return confirm('Supprimer cette règle ?')">
+              <i class="bi bi-trash"></i>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-secondary py-4">Aucune règle configurée</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Guide -->
+<div class="card">
+  <div class="card-header">Guide de Configuration</div>
+  <div class="card-body">
+    <p class="text-secondary small mb-2"><strong class="text-light">Seuil :</strong> Nombre de connexions avant déclenchement de l'alerte.</p>
+    <p class="text-secondary small mb-2"><strong class="text-light">Types supportés :</strong></p>
+    <div class="d-flex flex-wrap gap-2">
+      {% for t in ["SYN","Connect","UDP","FIN","NULL","XMAS"] %}
+        <span class="badge bg-secondary">{{ t }}</span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nouvelle Règle -->
+<div class="modal fade" id="modalRegle" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background:#1a1d27; color:#e2e8f0; border:1px solid #2d3148;">
+      <div class="modal-header" style="border-color:#2d3148;">
+        <h5 class="modal-title">Créer une Règle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="/regles/ajouter">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nom de la règle</label>
+            <input type="text" name="nom" class="form-control" placeholder="Ex: Détection SYN Flood" required/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Type de scan</label>
+            <select name="type_scan" class="form-select" required>
+              <option value="">Choisir...</option>
+              {% for t in ["SYN","Connect","UDP","FIN","NULL","XMAS"] %}
+                <option value="{{ t }}">{{ t }} Scan</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Seuil (connexions)</label>
+            <input type="number" name="seuil" class="form-control" placeholder="100" required/>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-color:#2d3148;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-primary">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

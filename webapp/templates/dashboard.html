@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% set page = "dashboard" %}
+
+{% block content %}
+<div class="mb-4">
+  <h1 class="fw-bold">Tableau de Bord</h1>
+  <p class="text-secondary">Vue d'ensemble de l'activité réseau</p>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-secondary small">Total Scans Détectés</div>
+          <div class="fs-2 fw-bold font-monospace">{{ total }}</div>
+        </div>
+        <i class="bi bi-activity fs-2 text-primary"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-secondary small">Alertes Critiques</div>
+          <div class="fs-2 fw-bold font-monospace text-danger">{{ critiques }}</div>
+        </div>
+        <i class="bi bi-exclamation-triangle fs-2 text-danger"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-secondary small">IPs Uniques</div>
+          <div class="fs-2 fw-bold font-monospace text-info">{{ ips }}</div>
+        </div>
+        <i class="bi bi-globe fs-2 text-info"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Graphiques placeholder -->
+<div class="row g-3 mb-4">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">Trafic Réseau en Temps Réel</div>
+      <div class="card-body d-flex align-items-center justify-content-center" style="height:200px; border: 1px dashed #2d3148; margin:1rem; border-radius:8px;">
+        <span class="text-secondary">Graphique — À connecter via WebSocket</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">Types de Scans</div>
+      <div class="card-body d-flex align-items-center justify-content-center" style="height:200px; border: 1px dashed #2d3148; margin:1rem; border-radius:8px;">
+        <span class="text-secondary">Camembert — À connecter</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Alertes récentes -->
+<div class="card">
+  <div class="card-header">Alertes Récentes</div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Date</th><th>IP Source</th><th>Type</th><th>Sévérité</th><th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in recentes %}
+        <tr>
+          <td class="font-monospace small">{{ a.date }}</td>
+          <td class="font-monospace">{{ a.ip }}</td>
+          <td>{{ a.type }}</td>
+          <td>
+            <span class="badge badge-{{ a.severite | lower }}">{{ a.severite }}</span>
+          </td>
+          <td>{{ a.statut }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

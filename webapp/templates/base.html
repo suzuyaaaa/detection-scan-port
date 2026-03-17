@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NetScan IDS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    body { background-color: #0f1117; color: #e2e8f0; min-height: 100vh; }
+    .sidebar {
+      width: 220px; min-height: 100vh; background: #1a1d27;
+      border-right: 1px solid #2d3148; position: fixed; top: 0; left: 0;
+    }
+    .sidebar .brand { padding: 1.2rem 1rem; border-bottom: 1px solid #2d3148; font-weight: 700; font-size: 1.1rem; }
+    .sidebar .nav-link { color: #94a3b8; border-radius: 6px; margin: 2px 8px; padding: 8px 12px; }
+    .sidebar .nav-link:hover { background: #2d3148; color: #e2e8f0; }
+    .sidebar .nav-link.active { background: #3b5bdb; color: #fff; }
+    .main-content { margin-left: 220px; padding: 2rem; }
+    .card { background: #1a1d27; border: 1px solid #2d3148; color: #e2e8f0; }
+    .card-header { background: #1e2235; border-bottom: 1px solid #2d3148; font-weight: 600; }
+    .table { color: #e2e8f0; }
+    .table thead th { background: #1e2235; border-color: #2d3148; color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; }
+    .table td, .table th { border-color: #2d3148; }
+    .table tbody tr:hover { background: #1e2235; }
+    .form-control, .form-select { background: #0f1117; border-color: #2d3148; color: #e2e8f0; }
+    .form-control:focus, .form-select:focus { background: #0f1117; color: #e2e8f0; border-color: #3b5bdb; box-shadow: none; }
+    .badge-critique { background: #ef4444; }
+    .badge-moyen    { background: #f59e0b; }
+    .badge-info     { background: #3b82f6; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar d-flex flex-column">
+  <div class="brand">
+    <i class="bi bi-shield-check me-2 text-primary"></i>NetScan IDS
+  </div>
+  <nav class="nav flex-column mt-2 flex-grow-1">
+    <a href="/" class="nav-link {% if page=='dashboard' %}active{% endif %}">
+      <i class="bi bi-speedometer2 me-2"></i>Tableau de Bord
+    </a>
+    <a href="/alertes" class="nav-link {% if page=='alertes' %}active{% endif %}">
+      <i class="bi bi-exclamation-triangle me-2"></i>Alertes
+    </a>
+    <a href="/regles" class="nav-link {% if page=='regles' %}active{% endif %}">
+      <i class="bi bi-shield me-2"></i>Règles
+    </a>
+    <a href="/rapports" class="nav-link {% if page=='rapports' %}active{% endif %}">
+      <i class="bi bi-file-text me-2"></i>Rapports
+    </a>
+  </nav>
+  <div class="p-3 border-top" style="border-color:#2d3148!important; font-size:0.8rem; color:#64748b;">
+    <div>Backend: SQLite</div>
+    <div><span class="status-dot bg-success me-1"></span>En ligne</div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main-content">
+  {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
