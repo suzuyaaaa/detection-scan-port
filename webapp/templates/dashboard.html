@@ -1,10 +1,29 @@
 {% extends "base.html" %}
 {% set page = "dashboard" %}
 
+
+
 {% block content %}
 <div class="mb-4">
   <h1 class="fw-bold">Tableau de Bord</h1>
   <p class="text-secondary">Vue d'ensemble de l'activité réseau</p>
+</div>
+
+<!-- FORMULAIRE ANALYSE IP -->
+<div class="card mb-4">
+  <div class="card-header">Analyser une adresse IP</div>
+  <div class="card-body">
+    <form method="POST" action="/analyser_ip" class="row g-2">
+      <div class="col-md-10">
+        <input type="text" name="ip" class="form-control" placeholder="Ex: 192.168.1.100" required>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          Analyser
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- KPI Cards -->

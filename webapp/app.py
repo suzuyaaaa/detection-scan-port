@@ -2,11 +2,24 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 import sqlite3
 import os
 from datetime import datetime
+import joblib
+import pandas as pd
+import random
+from network.capture_traffic import capture_ip_traffic
+
+
 
 app = Flask(__name__)
 DB_PATH = "netscan.db"
 
+# Charger modèle ML
+model = joblib.load("ml/model.pkl")
+encoders = joblib.load("ml/encoders.pkl")
+
 # ─── Init base de données ───────────────────────────────────────────────────
+
+
+
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -48,26 +61,9 @@ def init_db():
         )
     """)
 
-    # Données fictives si vide
-    if c.execute("SELECT COUNT(*) FROM alertes").fetchone()[0] == 0:
-        alertes = [
-            ("2026-03-12 14:32", "192.168.1.105", "SYN Scan", "Critique", "Nouvelle"),
-            ("2026-03-12 13:15", "10.0.0.42",     "UDP Scan", "Moyen",    "Nouvelle"),
-            ("2026-03-11 22:08", "172.16.0.8",    "Connect Scan", "Info", "Traitée"),
-            ("2026-03-11 18:45", "192.168.2.200", "SYN Scan", "Critique", "Nouvelle"),
-            ("2026-03-10 09:12", "10.0.0.15",     "FIN Scan", "Moyen",    "Traitée"),
-        ]
-        c.executemany("INSERT INTO alertes (date, ip, type, severite, statut) VALUES (?,?,?,?,?)", alertes)
-
-    if c.execute("SELECT COUNT(*) FROM regles").fetchone()[0] == 0:
-        regles = [
-            ("Détection SYN Flood", "SYN", 100, 1),
-            ("Scan UDP suspect",    "UDP", 50,  0),
-        ]
-        c.executemany("INSERT INTO regles (nom, type_scan, seuil, active) VALUES (?,?,?,?)", regles)
-
     conn.commit()
     conn.close()
+
 
 # ─── Dashboard ──────────────────────────────────────────────────────────────
 
@@ -174,6 +170,45 @@ def generer_rapport():
     conn.commit()
     conn.close()
     return redirect(url_for("rapports"))
+
+# ───────── ANALYSE IP ─────────
+
+@app.route("/analyser_ip", methods=["POST"])
+def analyser_ip():
+    ip = request.form["ip"]
+
+    #  Capture réelle
+    df = capture_ip_traffic(ip, duration=10)
+
+    if df is None:
+        return "Aucun trafic détecté", 400
+
+    # Encoder
+    for col in ["proto", "service", "state"]:
+        df[col] = encoders[col].transform(df[col])
+
+    # Prédiction
+    pred = model.predict(df)[0]
+
+    if pred == 1:
+        type_scan = "Scan suspect"
+        severite = "Critique"
+    else:
+        type_scan = "Normal"
+        severite = "Info"
+
+    # Sauvegarde DB
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO alertes (date, ip, type, severite, statut) VALUES (?,?,?,?,?)",
+        (datetime.now().strftime("%Y-%m-%d %H:%M"), ip, type_scan, severite, "Nouvelle")
+    )
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("dashboard"))
+
+
 
 # ─── Lancement ──────────────────────────────────────────────────────────────
 

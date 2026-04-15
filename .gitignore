@@ -17,8 +17,10 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Modèles ML temporaires (optionnel)
-#*.pkl
+# Modèles ML temporaires 
+*.pkl
 
 # Dataset volumineux (optionnel, si tu ne veux pas pousser)
 #*.csv
+
+netscan.db
