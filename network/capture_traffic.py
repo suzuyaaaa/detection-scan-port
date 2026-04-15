@@ -1,21 +1,26 @@
-from scapy.all import sniff, IP, TCP
+from scapy.all import sniff, IP, TCP, UDP
 import pandas as pd
 import time
 
 def extract_features(packets):
-    if not packets:
+    if len(packets) == 0:
         return None
 
     spkts = len(packets)
-    sbytes = sum(len(p) for p in packets)
+    dpkts = len(packets)
 
-    start = packets[0].time
-    end = packets[-1].time
-    dur = max(end - start, 0.01)
+    sbytes = sum(len(p) for p in packets)
+    dbytes = sbytes
 
     proto = "tcp"
     service = "http"
     state = "FIN"
+
+    start_time = packets[0].time
+    end_time = packets[-1].time
+    dur = end_time - start_time if end_time > start_time else 0.01
+
+    rate = spkts / dur if dur > 0 else 0
 
     data = {
         "dur": [dur],
@@ -23,10 +28,10 @@ def extract_features(packets):
         "service": [service],
         "state": [state],
         "spkts": [spkts],
-        "dpkts": [spkts],
+        "dpkts": [dpkts],
         "sbytes": [sbytes],
-        "dbytes": [sbytes],
-        "rate": [spkts / dur],
+        "dbytes": [dbytes],
+        "rate": [rate],
         "sttl": [64],
         "dttl": [64],
         "sload": [0],
@@ -44,8 +49,8 @@ def extract_features(packets):
         "tcprtt": [0],
         "synack": [0],
         "ackdat": [0],
-        "smean": [sbytes/spkts],
-        "dmean": [sbytes/spkts],
+        "smean": [sbytes/spkts if spkts > 0 else 0],
+        "dmean": [dbytes/dpkts if dpkts > 0 else 0],
         "trans_depth": [0],
         "response_body_len": [0],
         "ct_srv_src": [1],
@@ -66,13 +71,13 @@ def extract_features(packets):
 
 
 def capture_ip_traffic(target_ip, duration=10):
-    print(f"Capture trafic vers {target_ip}...")
+    print(f"Capture trafic pour {target_ip} pendant {duration}s...")
 
     packets = sniff(
         timeout=duration,
         filter=f"host {target_ip}"
     )
 
-    print(f"{len(packets)} packets")
+    print(f"{len(packets)} paquets capturés")
 
     return extract_features(packets)

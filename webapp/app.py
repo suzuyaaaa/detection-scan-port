@@ -210,6 +210,54 @@ def analyser_ip():
 
 
 
+# ───────── GRAPHE VISUALISATION ─────────
+
+@app.route("/api/stats")
+def api_stats():
+    conn = get_db()
+
+    # Nombre d'alertes par jour
+    data = conn.execute("""
+        SELECT substr(date,1,10) as jour, COUNT(*) as total
+        FROM alertes
+        GROUP BY jour
+        ORDER BY jour DESC LIMIT 7
+    """).fetchall()
+
+    labels = [row["jour"] for row in data]
+    values = [row["total"] for row in data]
+
+    conn.close()
+
+    return jsonify({
+        "labels": labels[::-1],
+        "values": values[::-1]
+    })
+
+
+@app.route("/api/types")
+def api_types():
+    conn = get_db()
+
+    data = conn.execute("""
+        SELECT type, COUNT(*) as total
+        FROM alertes
+        GROUP BY type
+    """).fetchall()
+
+    labels = [row["type"] for row in data]
+    values = [row["total"] for row in data]
+
+    conn.close()
+
+    return jsonify({
+        "labels": labels,
+        "values": values
+    })
+
+
+
+
 # ─── Lancement ──────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
