@@ -2,26 +2,30 @@
 {% set page = "rapports" %}
 
 {% block content %}
-<div class="mb-4">
-  <h1 class="fw-bold">Rapports</h1>
-  <p class="text-secondary">Génération et exportation des rapports d'activité</p>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <h1><i class="bi bi-file-earmark-bar-graph me-2 text-primary"></i>Rapports</h1>
+    <p>Génération et exportation des rapports d'activité réseau</p>
+  </div>
 </div>
 
-<!-- Formulaire génération -->
 <div class="card mb-4">
-  <div class="card-header">Générer un Rapport</div>
+  <div class="card-header">
+    <span><i class="bi bi-file-plus me-2 text-primary"></i>Générer un Rapport</span>
+  </div>
   <div class="card-body">
-    <form method="POST" action="/rapports/generer" class="row g-3">
+    <form method="POST" action="/rapports/generer" class="row g-3 align-items-end">
       <div class="col-md-3">
-        <label class="form-label">Date de début</label>
-        <input type="date" name="date_debut" class="form-control" required/>
+        <label class="form-label" style="font-size:0.78rem;color:#7d8590;">Date de début</label>
+        <input type="date" id="date_debut" name="date_debut" class="form-control font-mono" required/>
       </div>
       <div class="col-md-3">
-        <label class="form-label">Date de fin</label>
-        <input type="date" name="date_fin" class="form-control" required/>
+        <label class="form-label" style="font-size:0.78rem;color:#7d8590;">Date de fin</label>
+        <input type="date" id="date_fin" name="date_fin" class="form-control font-mono" required/>
       </div>
       <div class="col-md-3">
-        <label class="form-label">Type de rapport</label>
+        <label class="form-label" style="font-size:0.78rem;color:#7d8590;">Type de rapport</label>
         <select name="type" class="form-select">
           <option value="Complet">Rapport Complet</option>
           <option value="Alertes">Alertes Uniquement</option>
@@ -29,57 +33,128 @@
           <option value="Top IPs">Top IPs Suspectes</option>
         </select>
       </div>
-      <div class="col-md-3 d-flex align-items-end">
+      <div class="col-md-3">
         <button type="submit" class="btn btn-primary w-100">
-          <i class="bi bi-file-text me-1"></i>Générer
+          <i class="bi bi-file-text me-1"></i> Générer
         </button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Rapports rapides -->
-<div class="row g-3 mb-4">
-  {% for label, period in [("Dernières 24h","24h"),("7 derniers jours","7d"),("30 derniers jours","30d")] %}
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-body d-flex justify-content-between align-items-center p-3">
-        <div class="d-flex align-items-center gap-3">
-          <i class="bi bi-calendar text-primary fs-5"></i>
-          <div>
-            <div class="fw-medium">{{ label }}</div>
-            <div class="text-secondary small">Rapport rapide</div>
+<div class="card mb-4">
+  <div class="card-header">
+    <span><i class="bi bi-lightning me-2 text-warning"></i>Exports Rapides</span>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      {% for label, period, icon in [("Dernières 24h","24h","bi-clock"),("7 derniers jours","7d","bi-calendar-week"),("30 derniers jours","30d","bi-calendar-month")] %}
+      <div class="col-md-4">
+        <div class="p-3 rounded d-flex justify-content-between align-items-center"
+          style="background:#0d1117;border:1px solid #1e2d40;transition:border-color 0.2s;"
+          onmouseover="this.style.borderColor='#2a3f5f'"
+          onmouseout="this.style.borderColor='#1e2d40'">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width:36px;height:36px;border-radius:8px;background:rgba(47,129,247,0.12);display:flex;align-items:center;justify-content:center;border:1px solid rgba(47,129,247,0.2);">
+              <i class="bi {{ icon }} text-primary" style="font-size:1rem;"></i>
+            </div>
+            <div>
+              <div style="font-size:0.85rem;font-weight:500;">{{ label }}</div>
+              <div style="font-size:0.72rem;color:#7d8590;">Export CSV</div>
+            </div>
           </div>
+          <a href="/alertes/export_csv?period={{ period }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-download"></i>
+          </a>
         </div>
-        <button class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-download"></i>
-        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body d-flex gap-3 align-items-start">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(248,81,73,0.12);display:flex;align-items:center;justify-content:center;border:1px solid rgba(248,81,73,0.2);flex-shrink:0;">
+          <i class="bi bi-file-pdf" style="font-size:1.3rem;color:#f85149;"></i>
+        </div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px;">Export PDF</div>
+          <div style="font-size:0.8rem;color:#7d8590;">Rapport formaté avec graphiques, idéal pour présentation ou archivage.</div>
+          <span class="badge mt-2" style="background:rgba(248,81,73,0.12);color:#f85149;border:1px solid rgba(248,81,73,0.2);font-size:0.68rem;">
+            Bientôt disponible
+          </span>
+        </div>
       </div>
     </div>
   </div>
-  {% endfor %}
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body d-flex gap-3 align-items-start">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(63,185,80,0.12);display:flex;align-items:center;justify-content:center;border:1px solid rgba(63,185,80,0.2);flex-shrink:0;">
+          <i class="bi bi-file-earmark-spreadsheet" style="font-size:1.3rem;color:#3fb950;"></i>
+        </div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px;">Export CSV</div>
+          <div style="font-size:0.8rem;color:#7d8590;">Données brutes exploitables dans Excel, Python ou tout autre outil d'analyse.</div>
+          <a href="/alertes/export_csv" class="btn btn-sm mt-2"
+            style="background:rgba(63,185,80,0.12);color:#3fb950;border:1px solid rgba(63,185,80,0.2);font-size:0.75rem;">
+            <i class="bi bi-download me-1"></i> Télécharger
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Historique -->
-<div class="card mb-4">
-  <div class="card-header">Historique des Rapports</div>
+<div class="card">
+  <div class="card-header">
+    <span><i class="bi bi-clock-history me-2"></i>Historique des Rapports</span>
+  </div>
   <div class="card-body p-0">
     <table class="table table-hover mb-0">
       <thead>
-        <tr><th>Date de Génération</th><th>Période</th><th>Type</th></tr>
+        <tr>
+          <th>Date de Génération</th>
+          <th>Période</th>
+          <th>Type</th>
+          <th class="text-end">Actions</th>
+        </tr>
       </thead>
       <tbody>
         {% if rapports %}
           {% for r in rapports %}
           <tr>
-            <td class="font-monospace small">{{ r.date_generation }}</td>
-            <td>{{ r.date_debut }} → {{ r.date_fin }}</td>
-            <td><span class="badge bg-secondary">{{ r.type }}</span></td>
+            <td class="font-mono" style="font-size:0.8rem;color:#7d8590;">{{ r.date_generation }}</td>
+            <td class="font-mono" style="font-size:0.82rem;">
+              <span style="color:#58a6ff;">{{ r.date_debut }}</span>
+              <span style="color:#484f58;margin:0 6px;">→</span>
+              <span style="color:#58a6ff;">{{ r.date_fin }}</span>
+            </td>
+            <td>
+              <span class="badge" style="background:rgba(47,129,247,0.12);color:#58a6ff;border:1px solid rgba(47,129,247,0.2);font-size:0.72rem;">
+                {{ r.type }}
+              </span>
+            </td>
+            <td class="text-end">
+              <a href="/rapports/telecharger/{{ r.id }}" class="btn btn-sm btn-outline-primary me-1" title="Télécharger CSV">
+                <i class="bi bi-download"></i>
+              </a>
+              <a href="/rapports/supprimer/{{ r.id }}" class="btn btn-sm btn-outline-danger"
+                 onclick="return confirm('Supprimer ce rapport ?')" title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </a>
+            </td>
           </tr>
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="3" class="text-center text-secondary py-4">Aucun rapport généré</td>
+            <td colspan="4" class="text-center py-5" style="color:#484f58;">
+              <i class="bi bi-file-earmark-x d-block mb-2" style="font-size:2.5rem;"></i>
+              <div style="font-size:0.9rem;">Aucun rapport généré</div>
+            </td>
           </tr>
         {% endif %}
       </tbody>
@@ -87,30 +162,20 @@
   </div>
 </div>
 
-<!-- Formats d'export -->
-<div class="card">
-  <div class="card-header">Formats d'Exportation</div>
-  <div class="card-body">
-    <div class="row g-3">
-      <div class="col-md-6">
-        <div class="border rounded p-3 d-flex gap-3" style="border-color:#2d3148!important;">
-          <i class="bi bi-file-pdf text-danger fs-4"></i>
-          <div>
-            <div class="fw-medium">PDF</div>
-            <div class="text-secondary small">Rapport formaté avec graphiques, idéal pour la présentation</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6">
-        <div class="border rounded p-3 d-flex gap-3" style="border-color:#2d3148!important;">
-          <i class="bi bi-file-spreadsheet text-success fs-4"></i>
-          <div>
-            <div class="fw-medium">CSV</div>
-            <div class="text-secondary small">Données brutes exploitables dans Excel ou autre outil</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<script>
+  (function () {
+    const today = new Date();
+    const past  = new Date();
+    past.setDate(today.getDate() - 30);
+
+    const fmt = d => d.toISOString().slice(0, 10);  // "YYYY-MM-DD"
+
+    const debut = document.getElementById("date_debut");
+    const fin   = document.getElementById("date_fin");
+
+    if (debut && !debut.value) debut.value = fmt(past);
+    if (fin   && !fin.value)   fin.value   = fmt(today);
+  })();
+</script>
+
 {% endblock %}

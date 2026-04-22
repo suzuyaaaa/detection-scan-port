@@ -2,36 +2,58 @@
 {% set page = "regles" %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h1 class="fw-bold">Règles de Détection</h1>
-    <p class="text-secondary">Configuration des seuils et paramètres de détection</p>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <h1><i class="bi bi-shield-lock me-2 text-primary"></i>Règles IDS</h1>
+    <p>Configuration des seuils et paramètres de détection</p>
   </div>
-  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRegle">
-    <i class="bi bi-plus me-1"></i>Nouvelle Règle
-  </button>
+  <div class="topbar-actions">
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalRegle">
+      <i class="bi bi-plus-lg me-1"></i> Nouvelle Règle
+    </button>
+  </div>
 </div>
 
-<!-- Tableau -->
 <div class="card mb-4">
-  <div class="card-header">Règles Configurées</div>
+  <div class="card-header">
+    <span><i class="bi bi-list-check me-2"></i>Règles Configurées
+      <span class="badge ms-1" style="background:rgba(47,129,247,0.15);color:#58a6ff;border:1px solid rgba(47,129,247,0.2);font-size:0.72rem;">
+        {{ regles | length }}
+      </span>
+    </span>
+  </div>
   <div class="card-body p-0">
     <table class="table table-hover mb-0">
       <thead>
-        <tr><th>Nom</th><th>Type de Scan</th><th>Seuil</th><th>Statut</th><th>Actions</th></tr>
+        <tr>
+          <th>Nom</th>
+          <th>Type de Scan</th>
+          <th>Seuil</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
       </thead>
       <tbody>
         {% for r in regles %}
         <tr>
-          <td class="fw-medium">{{ r.nom }}</td>
-          <td>{{ r.type_scan }} Scan</td>
-          <td class="font-monospace">{{ r.seuil }}</td>
+          <td style="font-size:0.875rem;font-weight:500;">{{ r.nom }}</td>
           <td>
-            <a href="/regles/toggle/{{ r.id }}">
+            <span class="badge font-mono" style="background:rgba(47,129,247,0.12);color:#58a6ff;border:1px solid rgba(47,129,247,0.2);">
+              {{ r.type_scan }}
+            </span>
+          </td>
+          <td class="font-mono" style="color:#e3b341;">{{ r.seuil }}</td>
+          <td>
+            <a href="/regles/toggle/{{ r.id }}" style="text-decoration:none;">
               {% if r.active %}
-                <span class="badge bg-success">Active</span>
+                <span class="badge" style="background:rgba(63,185,80,0.15);color:#3fb950;border:1px solid rgba(63,185,80,0.3);">
+                  <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Active
+                </span>
               {% else %}
-                <span class="badge bg-secondary">Inactive</span>
+                <span class="badge" style="background:rgba(72,79,88,0.3);color:#7d8590;border:1px solid #1e2d40;">
+                  <i class="bi bi-circle me-1" style="font-size:0.5rem;"></i>Inactive
+                </span>
               {% endif %}
             </a>
           </td>
@@ -44,7 +66,10 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="5" class="text-center text-secondary py-4">Aucune règle configurée</td>
+          <td colspan="5" class="text-center py-4" style="color:#484f58;">
+            <i class="bi bi-shield-x d-block mb-2" style="font-size:2rem;"></i>
+            Aucune règle configurée
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -52,54 +77,122 @@
   </div>
 </div>
 
-<!-- Guide -->
-<div class="card">
-  <div class="card-header">Guide de Configuration</div>
+<div class="card mb-4">
+  <div class="card-header">
+    <span><i class="bi bi-cpu me-2 text-primary"></i>Règles IDS Intégrées (Machine Learning)</span>
+    <span class="badge" style="background:rgba(63,185,80,0.15);color:#3fb950;border:1px solid rgba(63,185,80,0.3);font-size:0.7rem;">Actives</span>
+  </div>
   <div class="card-body">
-    <p class="text-secondary small mb-2"><strong class="text-light">Seuil :</strong> Nombre de connexions avant déclenchement de l'alerte.</p>
-    <p class="text-secondary small mb-2"><strong class="text-light">Types supportés :</strong></p>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="p-3 rounded" style="background:#0d1117;border:1px solid #1e2d40;">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-1-circle text-primary"></i>
+            <span style="font-size:0.82rem;font-weight:600;">Règle Volume</span>
+          </div>
+          <div class="font-mono" style="font-size:0.75rem;color:#7d8590;">spkts &gt; 20 AND dpkts &lt; spkts × 0.5</div>
+          <div style="font-size:0.75rem;color:#7d8590;margin-top:4px;">Beaucoup de paquets envoyés, peu de réponses</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="p-3 rounded" style="background:#0d1117;border:1px solid #1e2d40;">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-2-circle text-primary"></i>
+            <span style="font-size:0.82rem;font-weight:600;">Règle Vitesse</span>
+          </div>
+          <div class="font-mono" style="font-size:0.75rem;color:#7d8590;">rate &gt; 5 AND spkts &gt; 15</div>
+          <div style="font-size:0.75rem;color:#7d8590;margin-top:4px;">Trafic anormalement rapide</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="p-3 rounded" style="background:#0d1117;border:1px solid #1e2d40;">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-3-circle text-primary"></i>
+            <span style="font-size:0.82rem;font-weight:600;">Règle SYN Flood</span>
+          </div>
+          <div class="font-mono" style="font-size:0.75rem;color:#7d8590;">spkts &gt; 30</div>
+          <div style="font-size:0.75rem;color:#7d8590;margin-top:4px;">Volume élevé de paquets SYN</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span><i class="bi bi-book me-2"></i>Guide de Configuration</span>
+  </div>
+  <div class="card-body">
+    <p style="font-size:0.85rem;color:#7d8590;margin-bottom:0.75rem;">
+      <strong style="color:#e6edf3;">Seuil :</strong> Valeur déclenchant l'alerte (selon la métrique du type choisi).
+    </p>
+    <p style="font-size:0.85rem;color:#7d8590;margin-bottom:0.75rem;">
+      <strong style="color:#e6edf3;">Types supportés :</strong>
+    </p>
     <div class="d-flex flex-wrap gap-2">
-      {% for t in ["SYN","Connect","UDP","FIN","NULL","XMAS"] %}
-        <span class="badge bg-secondary">{{ t }}</span>
+      {% for t, desc in [
+        ("PORT_SCAN","Nb de ports différents testés (ex: 15)"),
+        ("SYN","Nb de paquets SYN (ex: 100 → SYN flood)"),
+        ("RATE","Vitesse du trafic en pkt/s (ex: 10)"),
+        ("TCP","Volume de paquets TCP (ex: 50)"),
+        ("UDP","Volume de paquets UDP (ex: 30)"),
+        ("ICMP","Volume de paquets ICMP/ping (ex: 40)"),
+        ("FIN","Scans furtifs FIN/NULL/Xmas (ex: 20)")
+      ] %}
+      <div class="p-2 rounded" style="background:#0d1117;border:1px solid #1e2d40;min-width:160px;">
+        <span class="badge font-mono mb-1" style="background:rgba(47,129,247,0.12);color:#58a6ff;border:1px solid rgba(47,129,247,0.2);">{{ t }}</span>
+        <div style="font-size:0.72rem;color:#7d8590;">{{ desc }}</div>
+      </div>
       {% endfor %}
     </div>
   </div>
 </div>
 
-<!-- Modal Nouvelle Règle -->
+<!-- Modal -->
 <div class="modal fade" id="modalRegle" tabindex="-1">
   <div class="modal-dialog">
-    <div class="modal-content" style="background:#1a1d27; color:#e2e8f0; border:1px solid #2d3148;">
-      <div class="modal-header" style="border-color:#2d3148;">
-        <h5 class="modal-title">Créer une Règle</h5>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2 text-primary"></i>Créer une Règle</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <form method="POST" action="/regles/ajouter">
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">Nom de la règle</label>
+            <label class="form-label" style="font-size:0.82rem;color:#7d8590;">Nom de la règle</label>
             <input type="text" name="nom" class="form-control" placeholder="Ex: Détection SYN Flood" required/>
           </div>
           <div class="mb-3">
-            <label class="form-label">Type de scan</label>
+            <label class="form-label" style="font-size:0.82rem;color:#7d8590;">Type de scan</label>
             <select name="type_scan" class="form-select" required>
               <option value="">Choisir...</option>
-              {% for t in ["SYN","Connect","UDP","FIN","NULL","XMAS"] %}
-                <option value="{{ t }}">{{ t }} Scan</option>
+              {% for t, label in [
+                ("PORT_SCAN","PORT_SCAN — ports testés"),
+                ("SYN","SYN — paquets SYN"),
+                ("RATE","RATE — vitesse du trafic"),
+                ("TCP","TCP — paquets TCP"),
+                ("UDP","UDP — paquets UDP"),
+                ("ICMP","ICMP — paquets ping"),
+                ("FIN","FIN — scans furtifs")
+              ] %}
+                <option value="{{ t }}">{{ label }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label">Seuil (connexions)</label>
-            <input type="number" name="seuil" class="form-control" placeholder="100" required/>
+            <label class="form-label" style="font-size:0.82rem;color:#7d8590;">Seuil</label>
+            <input type="number" name="seuil" class="form-control font-mono" placeholder="100" min="1" required/>
           </div>
         </div>
-        <div class="modal-footer" style="border-color:#2d3148;">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-          <button type="submit" class="btn btn-primary">Créer</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Créer la règle
+          </button>
         </div>
       </form>
     </div>
   </div>
 </div>
+
 {% endblock %}

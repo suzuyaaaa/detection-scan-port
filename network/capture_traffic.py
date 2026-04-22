@@ -1,20 +1,19 @@
-from scapy.all import sniff, IP, TCP, UDP
+from scapy.all import sniff, IP, TCP
 import pandas as pd
-import time
 
 def extract_features(packets):
     if len(packets) == 0:
         return None
 
-    spkts = len(packets)
-    dpkts = len(packets)
+    # 🔥 séparer paquets envoyés et reçus
+    src_packets = [p for p in packets if p[IP].src != p[IP].dst]
+    dst_packets = [p for p in packets if p[IP].dst != p[IP].src]
+
+    spkts = len(src_packets) if src_packets else len(packets)
+    dpkts = max(1, spkts // 4)  # un scan a peu de réponses
 
     sbytes = sum(len(p) for p in packets)
-    dbytes = sbytes
-
-    proto = "tcp"
-    service = "http"
-    state = "FIN"
+    dbytes = sbytes // 4
 
     start_time = packets[0].time
     end_time = packets[-1].time
@@ -22,11 +21,25 @@ def extract_features(packets):
 
     rate = spkts / dur if dur > 0 else 0
 
+    # 🔥 compter les SYN
+    syn_count = 0
+    ports_testes = set()
+    for p in packets:
+        if p.haslayer(TCP):
+            flags = p.sprintf("%TCP.flags%")
+            if "S" in flags and "A" not in flags:
+                syn_count += 1
+            ports_testes.add(p[TCP].dport)
+
+    print(f"🔍 SYN count: {syn_count}")
+    print(f"🔍 Ports testés: {len(ports_testes)}")
+    print(f"🔍 spkts: {spkts}, dpkts: {dpkts}, rate: {rate:.2f}")
+
     data = {
         "dur": [dur],
-        "proto": [proto],
-        "service": [service],
-        "state": [state],
+        "proto": ["tcp"],
+        "service": ["http"],
+        "state": ["FIN"],
         "spkts": [spkts],
         "dpkts": [dpkts],
         "sbytes": [sbytes],
@@ -49,14 +62,14 @@ def extract_features(packets):
         "tcprtt": [0],
         "synack": [0],
         "ackdat": [0],
-        "smean": [sbytes/spkts if spkts > 0 else 0],
-        "dmean": [dbytes/dpkts if dpkts > 0 else 0],
+        "smean": [sbytes / spkts if spkts > 0 else 0],
+        "dmean": [dbytes / dpkts if dpkts > 0 else 0],
         "trans_depth": [0],
         "response_body_len": [0],
-        "ct_srv_src": [1],
+        "ct_srv_src": [syn_count],
         "ct_state_ttl": [1],
         "ct_dst_ltm": [1],
-        "ct_src_dport_ltm": [1],
+        "ct_src_dport_ltm": [len(ports_testes)],
         "ct_dst_sport_ltm": [1],
         "ct_dst_src_ltm": [1],
         "is_ftp_login": [0],
@@ -69,15 +82,22 @@ def extract_features(packets):
 
     return pd.DataFrame(data)
 
-
 def capture_ip_traffic(target_ip, duration=10):
-    print(f"Capture trafic pour {target_ip} pendant {duration}s...")
+    print(f"🚨 Capture trafic pour {target_ip} pendant {duration}s...")
 
     packets = sniff(
         timeout=duration,
-        filter=f"host {target_ip}"
+        filter=f"tcp and host {target_ip}",
+        lfilter=lambda p: IP in p and (
+            p[IP].src == target_ip or p[IP].dst == target_ip
+        )
     )
 
-    print(f"{len(packets)} paquets capturés")
+    filtered = list(packets)
+    print(f"📦 {len(filtered)} paquets filtrés")
 
-    return extract_features(packets)
+    if len(filtered) == 0:
+        print("❌ Aucun paquet capturé")
+        return None
+
+    return extract_features(filtered)

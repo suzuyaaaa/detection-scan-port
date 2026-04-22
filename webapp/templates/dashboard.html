@@ -1,63 +1,87 @@
 {% extends "base.html" %}
 {% set page = "dashboard" %}
 
-
-
 {% block content %}
-<div class="mb-4">
-  <h1 class="fw-bold">Tableau de Bord</h1>
-  <p class="text-secondary">Vue d'ensemble de l'activité réseau</p>
-</div>
 
-<!-- FORMULAIRE ANALYSE IP -->
-<div class="card mb-4">
-  <div class="card-header">Analyser une adresse IP</div>
-  <div class="card-body">
-    <form method="POST" action="/analyser_ip" class="row g-2">
-      <div class="col-md-10">
-        <input type="text" name="ip" class="form-control" placeholder="Ex: 192.168.1.100" required>
-      </div>
-      <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">
-          Analyser
-        </button>
-      </div>
-    </form>
+<div class="topbar">
+  <div class="topbar-title">
+    <h1><i class="bi bi-speedometer2 me-2 text-primary"></i>Tableau de Bord</h1>
+    <p>Vue d'ensemble de l'activité réseau en temps réel</p>
+  </div>
+  <div class="topbar-actions">
+    <div class="clock font-mono" id="topbar-clock">--:--:--</div>
+    <button class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
+      <i class="bi bi-arrow-clockwise"></i> Actualiser
+    </button>
   </div>
 </div>
 
-<!-- KPI Cards -->
+<div class="card mb-4" style="border-color:rgba(47,129,247,0.3);">
+  <div class="card-body p-3">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <i class="bi bi-search text-primary"></i>
+      <span style="font-size:0.9rem;font-weight:600;">Analyser une adresse IP</span>
+      <span class="badge ms-2" style="background:rgba(47,129,247,0.15);color:#58a6ff;border:1px solid rgba(47,129,247,0.2);font-size:0.68rem;">Capture 15s</span>
+    </div>
+    <form method="POST" action="/analyser_ip" class="d-flex gap-2" id="analyseForm">
+      <input type="text" name="ip" class="form-control font-mono"
+        placeholder="Ex: 192.168.1.100" required style="max-width:320px;"/>
+      <button type="submit" class="btn btn-primary px-4" id="analyseBtn">
+        <i class="bi bi-radar me-1"></i> Analyser
+      </button>
+    </form>
+    <div id="analyseProgress" style="display:none;" class="mt-2">
+      <div class="d-flex align-items-center gap-2">
+        <div class="spinner-border spinner-border-sm text-primary"></div>
+        <span style="font-size:0.8rem;color:#7d8590;" id="progressText">Capture du trafic en cours...</span>
+      </div>
+      <div class="progress mt-1" style="height:3px;background:#1e2d40;">
+        <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" style="width:100%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="row g-3 mb-4">
   <div class="col-md-4">
-    <div class="card">
-      <div class="card-body d-flex justify-content-between align-items-center">
+    <div class="card h-100">
+      <div class="card-body d-flex justify-content-between align-items-center p-3">
         <div>
-          <div class="text-secondary small">Total Scans Détectés</div>
-          <div class="fs-2 fw-bold font-monospace">{{ total }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;text-transform:uppercase;letter-spacing:0.08em;">Total Détections</div>
+          <div class="fw-bold font-mono" style="font-size:2rem;">{{ total }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;">analyses effectuées</div>
         </div>
-        <i class="bi bi-activity fs-2 text-primary"></i>
+        <div style="width:48px;height:48px;border-radius:10px;background:rgba(47,129,247,0.12);display:flex;align-items:center;justify-content:center;border:1px solid rgba(47,129,247,0.2);">
+          <i class="bi bi-activity" style="font-size:1.4rem;color:#2f81f7;"></i>
+        </div>
       </div>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="card">
-      <div class="card-body d-flex justify-content-between align-items-center">
+    <div class="card h-100" style="border-color:rgba(248,81,73,0.2);">
+      <div class="card-body d-flex justify-content-between align-items-center p-3">
         <div>
-          <div class="text-secondary small">Alertes Critiques</div>
-          <div class="fs-2 fw-bold font-monospace text-danger">{{ critiques }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;text-transform:uppercase;letter-spacing:0.08em;">Alertes Critiques</div>
+          <div class="fw-bold font-mono" style="font-size:2rem;color:#f85149;">{{ critiques }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;">scans détectés</div>
         </div>
-        <i class="bi bi-exclamation-triangle fs-2 text-danger"></i>
+        <div style="width:48px;height:48px;border-radius:10px;background:rgba(248,81,73,0.12);display:flex;align-items:center;justify-content:center;border:1px solid rgba(248,81,73,0.2);">
+          <i class="bi bi-exclamation-triangle" style="font-size:1.4rem;color:#f85149;"></i>
+        </div>
       </div>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="card">
-      <div class="card-body d-flex justify-content-between align-items-center">
+    <div class="card h-100" style="border-color:rgba(88,166,255,0.2);">
+      <div class="card-body d-flex justify-content-between align-items-center p-3">
         <div>
-          <div class="text-secondary small">IPs Uniques</div>
-          <div class="fs-2 fw-bold font-monospace text-info">{{ ips }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;text-transform:uppercase;letter-spacing:0.08em;">IPs Surveillées</div>
+          <div class="fw-bold font-mono" style="font-size:2rem;color:#58a6ff;">{{ ips }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;">adresses uniques</div>
         </div>
-        <i class="bi bi-globe fs-2 text-info"></i>
+        <div style="width:48px;height:48px;border-radius:10px;background:rgba(88,166,255,0.12);display:flex;align-items:center;justify-content:center;border:1px solid rgba(88,166,255,0.2);">
+          <i class="bi bi-globe2" style="font-size:1.4rem;color:#58a6ff;"></i>
+        </div>
       </div>
     </div>
   </div>
@@ -65,50 +89,139 @@
 
 <div class="row g-3 mb-4">
   <div class="col-md-8">
-    <div class="card">
-      <div class="card-header">Trafic Réseau</div>
+    <div class="card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-graph-up me-2 text-primary"></i>Activité Réseau (7 derniers jours)</span>
+        <span style="font-size:0.72rem;color:#7d8590;">Mise à jour automatique</span>
+      </div>
       <div class="card-body">
-        <canvas id="lineChart"></canvas>
+        <canvas id="lineChart" height="120"></canvas>
       </div>
     </div>
   </div>
-
   <div class="col-md-4">
-    <div class="card">
-      <div class="card-header">Types de Scans</div>
-      <div class="card-body">
-        <canvas id="pieChart"></canvas>
+    <div class="card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-pie-chart me-2 text-primary"></i>Types de Détections</span>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="pieChart" height="160"></canvas>
       </div>
     </div>
   </div>
 </div>
 
-
-
-<!-- Alertes récentes -->
 <div class="card">
-  <div class="card-header">Alertes Récentes</div>
+  <div class="card-header">
+    <span><i class="bi bi-clock-history me-2"></i>Alertes Récentes</span>
+    <a href="/alertes" style="font-size:0.78rem;color:#58a6ff;text-decoration:none;">Voir tout <i class="bi bi-arrow-right"></i></a>
+  </div>
   <div class="card-body p-0">
     <table class="table table-hover mb-0">
       <thead>
-        <tr>
-          <th>Date</th><th>IP Source</th><th>Type</th><th>Sévérité</th><th>Statut</th>
-        </tr>
+        <tr><th>Date</th><th>IP Source</th><th>Type</th><th>Sévérité</th><th>Statut</th></tr>
       </thead>
       <tbody>
         {% for a in recentes %}
         <tr>
-          <td class="font-monospace small">{{ a.date }}</td>
-          <td class="font-monospace">{{ a.ip }}</td>
-          <td>{{ a.type }}</td>
+          <td class="font-mono" style="font-size:0.8rem;color:#7d8590;">{{ a.date }}</td>
+          <td class="font-mono" style="color:#58a6ff;">{{ a.ip }}</td>
+          <td style="font-size:0.85rem;">{{ a.type }}</td>
+          <td><span class="badge badge-{{ a.severite | lower }}">{{ a.severite }}</span></td>
           <td>
-            <span class="badge badge-{{ a.severite | lower }}">{{ a.severite }}</span>
+            {% if a.statut == 'Nouvelle' %}
+              <span class="badge" style="background:rgba(227,179,65,0.15);color:#e3b341;border:1px solid rgba(227,179,65,0.3);font-size:0.7rem;">Nouvelle</span>
+            {% elif a.statut == 'Auto' %}
+              <span class="badge" style="background:rgba(88,166,255,0.15);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);font-size:0.7rem;">Auto</span>
+            {% else %}
+              <span class="badge" style="background:rgba(63,185,80,0.15);color:#3fb950;border:1px solid rgba(63,185,80,0.3);font-size:0.7rem;">Traitée</span>
+            {% endif %}
           </td>
-          <td>{{ a.statut }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center py-4" style="color:#484f58;">
+            <i class="bi bi-shield-check d-block mb-2" style="font-size:2rem;color:#3fb950;"></i>
+            Aucune activité suspecte détectée
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+
+<script>
+function updateTopbarClock() {
+  const el = document.getElementById('topbar-clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('fr-FR');
+}
+setInterval(updateTopbarClock, 1000);
+updateTopbarClock();
+
+document.getElementById('analyseForm').addEventListener('submit', function() {
+  document.getElementById('analyseBtn').disabled = true;
+  document.getElementById('analyseBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Analyse...';
+  document.getElementById('analyseProgress').style.display = 'block';
+  const msgs = ['Capture du trafic en cours...','Extraction des features réseau...','Prédiction ML en cours...','Finalisation de l\'analyse...'];
+  let seconds = 0;
+  setInterval(() => {
+    seconds++;
+    const idx = Math.min(Math.floor(seconds / 4), msgs.length - 1);
+    document.getElementById('progressText').textContent = msgs[idx];
+  }, 1000);
+});
+
+Chart.defaults.color = '#7d8590';
+Chart.defaults.borderColor = '#1e2d40';
+
+fetch('/api/stats').then(r => r.json()).then(data => {
+  const ctx = document.getElementById('lineChart').getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+  gradient.addColorStop(0, 'rgba(47,129,247,0.25)');
+  gradient.addColorStop(1, 'rgba(47,129,247,0)');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [{
+        label: 'Alertes', data: data.values,
+        borderColor: '#2f81f7', backgroundColor: gradient,
+        borderWidth: 2, pointBackgroundColor: '#2f81f7',
+        pointBorderColor: '#080b14', pointBorderWidth: 2,
+        pointRadius: 4, tension: 0.4, fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#1e2d40' }, ticks: { font: { family: 'JetBrains Mono', size: 10 } } },
+        y: { grid: { color: '#1e2d40' }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, stepSize: 1 }, beginAtZero: true }
+      }
+    }
+  });
+});
+
+fetch('/api/types').then(r => r.json()).then(data => {
+  const ctx = document.getElementById('pieChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: data.labels,
+      datasets: [{
+        data: data.values,
+        backgroundColor: ['#f85149','#e3b341','#2f81f7','#3fb950','#58a6ff'],
+        borderColor: '#111827', borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 10, color: '#7d8590' } } },
+      cutout: '65%',
+    }
+  });
+});
+</script>
+
 {% endblock %}

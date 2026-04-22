@@ -6,71 +6,322 @@
   <title>NetScan IDS</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
-  
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
   <style>
-    
-    body { background-color: #0f1117; color: #e2e8f0; min-height: 100vh; }
-    .sidebar {
-      width: 220px; min-height: 100vh; background: #1a1d27;
-      border-right: 1px solid #2d3148; position: fixed; top: 0; left: 0;
+    :root {
+      --bg-primary: #080b14;
+      --bg-secondary: #0d1117;
+      --bg-card: #111827;
+      --bg-card-hover: #161f30;
+      --border: #1e2d40;
+      --border-bright: #2a3f5f;
+      --text-primary: #e6edf3;
+      --text-secondary: #7d8590;
+      --text-muted: #484f58;
+      --accent: #2f81f7;
+      --accent-glow: rgba(47, 129, 247, 0.15);
+      --accent-hover: #58a6ff;
+      --danger: #f85149;
+      --danger-glow: rgba(248, 81, 73, 0.15);
+      --warning: #e3b341;
+      --warning-glow: rgba(227, 179, 65, 0.15);
+      --success: #3fb950;
+      --success-glow: rgba(63, 185, 80, 0.15);
+      --info: #58a6ff;
+      --sidebar-width: 240px;
     }
-    .sidebar .brand { padding: 1.2rem 1rem; border-bottom: 1px solid #2d3148; font-weight: 700; font-size: 1.1rem; }
-    .sidebar .nav-link { color: #94a3b8; border-radius: 6px; margin: 2px 8px; padding: 8px 12px; }
-    .sidebar .nav-link:hover { background: #2d3148; color: #e2e8f0; }
-    .sidebar .nav-link.active { background: #3b5bdb; color: #fff; }
-    .main-content { margin-left: 220px; padding: 2rem; }
-    .card { background: #1a1d27; border: 1px solid #2d3148; color: #e2e8f0; }
-    .card-header { background: #1e2235; border-bottom: 1px solid #2d3148; font-weight: 600; }
-    .table { color: #e2e8f0; }
-    .table thead th { background: #1e2235; border-color: #2d3148; color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; }
-    .table td, .table th { border-color: #2d3148; }
-    .table tbody tr:hover { background: #1e2235; }
-    .form-control, .form-select { background: #0f1117; border-color: #2d3148; color: #e2e8f0; }
-    .form-control:focus, .form-select:focus { background: #0f1117; color: #e2e8f0; border-color: #3b5bdb; box-shadow: none; }
-    .badge-critique { background: #ef4444; }
-    .badge-moyen    { background: #f59e0b; }
-    .badge-info     { background: #3b82f6; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      min-height: 100vh;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      top: 0; left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    .sidebar-brand {
+      padding: 1.4rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .sidebar-brand .logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, #2f81f7, #1a56c4);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      box-shadow: 0 0 12px rgba(47, 129, 247, 0.3);
+    }
+
+    .sidebar-brand .brand-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      letter-spacing: 0.05em;
+    }
+
+    .sidebar-brand .brand-sub {
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-section {
+      padding: 1rem 0.8rem 0.4rem;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+    }
+
+    .nav-link {
+      color: var(--text-secondary);
+      border-radius: 8px;
+      margin: 2px 8px;
+      padding: 9px 12px;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .nav-link:hover { background: var(--bg-card); color: var(--text-primary); }
+
+    .nav-link.active {
+      background: var(--accent-glow);
+      color: var(--accent-hover);
+      border: 1px solid rgba(47, 129, 247, 0.2);
+    }
+
+    .nav-link .nav-icon { width: 18px; text-align: center; font-size: 0.95rem; }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--danger);
+      color: white;
+      border-radius: 10px;
+      padding: 1px 7px;
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+    }
+
+    .pulse-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(63, 185, 80, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(63, 185, 80, 0); }
+    }
+
+    .main-content { margin-left: var(--sidebar-width); padding: 2rem 2.5rem; min-height: 100vh; }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-title h1 { font-size: 1.4rem; font-weight: 700; margin: 0; }
+    .topbar-title p { font-size: 0.82rem; color: var(--text-secondary); margin: 0.2rem 0 0; }
+    .topbar-actions { display: flex; align-items: center; gap: 0.75rem; }
+
+    .clock {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      background: var(--bg-card);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary); transition: border-color 0.2s; }
+    .card:hover { border-color: var(--border-bright); }
+    .card-header { background: transparent; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.85rem; padding: 0.9rem 1.2rem; display: flex; align-items: center; justify-content: space-between; }
+    .card-body { padding: 1.2rem; }
+
+    .table { color: var(--text-primary); font-size: 0.875rem; margin: 0; }
+    .table thead th { background: rgba(30,45,64,0.5); border-color: var(--border); color: var(--text-secondary); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; padding: 0.75rem 1rem; }
+    .table td { border-color: var(--border); padding: 0.8rem 1rem; vertical-align: middle; }
+    .table tbody tr:hover { background: var(--bg-card-hover); }
+
+    .form-control, .form-select { background: var(--bg-secondary); border-color: var(--border); color: var(--text-primary); border-radius: 8px; font-size: 0.875rem; }
+    .form-control:focus, .form-select:focus { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .form-control::placeholder { color: var(--text-muted); }
+
+    .btn-primary { background: var(--accent); border-color: var(--accent); font-weight: 500; font-size: 0.875rem; }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); box-shadow: 0 0 12px var(--accent-glow); }
+    .btn-outline-success { color: var(--success); border-color: var(--success); }
+    .btn-outline-success:hover { background: var(--success-glow); color: var(--success); }
+    .btn-outline-danger { color: var(--danger); border-color: var(--danger); }
+    .btn-outline-danger:hover { background: var(--danger-glow); color: var(--danger); }
+    .btn-outline-secondary { color: var(--text-secondary); border-color: var(--border); }
+    .btn-outline-secondary:hover { background: var(--bg-card); color: var(--text-primary); border-color: var(--border-bright); }
+
+    .badge-critique { background: var(--danger-glow); color: var(--danger); border: 1px solid rgba(248,81,73,0.3); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; }
+    .badge-moyen { background: var(--warning-glow); color: var(--warning); border: 1px solid rgba(227,179,65,0.3); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; }
+    .badge-info { background: var(--accent-glow); color: var(--info); border: 1px solid rgba(88,166,255,0.3); font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; }
+
+    .modal-content { background: var(--bg-card); border: 1px solid var(--border-bright); color: var(--text-primary); }
+    .modal-header { border-color: var(--border); }
+    .modal-footer { border-color: var(--border); }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+    .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 9999; }
   </style>
 </head>
 
-
-
 <body>
 
-<!-- Sidebar -->
-<div class="sidebar d-flex flex-column">
-  <div class="brand">
-    <i class="bi bi-shield-check me-2 text-primary"></i>NetScan IDS
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo-icon">
+      <i class="bi bi-shield-check text-white"></i>
+    </div>
+    <div>
+      <div class="brand-text">NetScan</div>
+      <div class="brand-sub">IDS v2.0</div>
+    </div>
   </div>
-  <nav class="nav flex-column mt-2 flex-grow-1">
+
+  <div class="sidebar-section">Navigation</div>
+
+  <nav class="nav flex-column">
     <a href="/" class="nav-link {% if page=='dashboard' %}active{% endif %}">
-      <i class="bi bi-speedometer2 me-2"></i>Tableau de Bord
+      <span class="nav-icon"><i class="bi bi-speedometer2"></i></span>
+      Tableau de Bord
     </a>
     <a href="/alertes" class="nav-link {% if page=='alertes' %}active{% endif %}">
-      <i class="bi bi-exclamation-triangle me-2"></i>Alertes
+      <span class="nav-icon"><i class="bi bi-exclamation-triangle"></i></span>
+      Alertes
+      <span class="nav-badge" id="badge-alertes">–</span>
+    </a>
+    <a href="/historique" class="nav-link {% if page=='historique' %}active{% endif %}">
+      <span class="nav-icon"><i class="bi bi-clock-history"></i></span>
+      Historique
     </a>
     <a href="/regles" class="nav-link {% if page=='regles' %}active{% endif %}">
-      <i class="bi bi-shield me-2"></i>Règles
+      <span class="nav-icon"><i class="bi bi-shield-lock"></i></span>
+      Règles IDS
     </a>
     <a href="/rapports" class="nav-link {% if page=='rapports' %}active{% endif %}">
-      <i class="bi bi-file-text me-2"></i>Rapports
+      <span class="nav-icon"><i class="bi bi-file-earmark-bar-graph"></i></span>
+      Rapports
     </a>
   </nav>
-  <div class="p-3 border-top" style="border-color:#2d3148!important; font-size:0.8rem; color:#64748b;">
-    <div>Backend: SQLite</div>
-    <div><span class="status-dot bg-success me-1"></span>En ligne</div>
+
+  <div class="sidebar-footer">
+    <div class="status-indicator">
+      <div class="pulse-dot"></div>
+      <span>IDS Actif</span>
+    </div>
+    <div class="status-indicator">
+      <i class="bi bi-database" style="font-size:0.7rem;"></i>
+      <span>SQLite · Local</span>
+    </div>
+    <div class="status-indicator">
+      <i class="bi bi-clock" style="font-size:0.7rem;"></i>
+      <span id="time-display">--:--:--</span>
+    </div>
   </div>
 </div>
 
-<!-- Main -->
 <div class="main-content">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container-fluid mt-3">
+        {% for category, msg in messages %}
+          {% set color = {
+            'error':   ('rgba(248,81,73,0.12)',  '#f85149', 'rgba(248,81,73,0.35)'),
+            'danger':  ('rgba(248,81,73,0.12)',  '#f85149', 'rgba(248,81,73,0.35)'),
+            'warning': ('rgba(227,179,65,0.12)', '#e3b341', 'rgba(227,179,65,0.35)'),
+            'success': ('rgba(63,185,80,0.12)',  '#3fb950', 'rgba(63,185,80,0.35)'),
+            'info':    ('rgba(88,166,255,0.12)', '#58a6ff', 'rgba(88,166,255,0.35)')
+          }.get(category, ('rgba(88,166,255,0.12)', '#58a6ff', 'rgba(88,166,255,0.35)')) %}
+          <div class="alert d-flex justify-content-between align-items-center"
+               style="background:{{ color[0] }};color:{{ color[1] }};border:1px solid {{ color[2] }};border-radius:8px;font-size:0.9rem;">
+            <span>{{ msg }}</span>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"
+                    style="filter:invert(1);opacity:0.6;"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
   {% block content %}{% endblock %}
 </div>
+<div class="toast-container" id="toastContainer"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+  function updateClock() {
+    document.getElementById('time-display').textContent = new Date().toLocaleTimeString('fr-FR');
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
 
+  fetch('/api/stats').then(r => r.json()).then(data => {
+    const total = data.values.reduce((a, b) => a + b, 0);
+    const badge = document.getElementById('badge-alertes');
+    if (badge) badge.textContent = total > 0 ? total : '0';
+  }).catch(() => {});
+</script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

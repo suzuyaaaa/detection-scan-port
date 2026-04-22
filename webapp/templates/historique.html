@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% set page = "historique" %}
+
+{% block content %}
+
+<div class="topbar">
+  <div class="topbar-title">
+    <h1><i class="bi bi-clock-history me-2 text-primary"></i>Historique des Scans</h1>
+    <p>Trace complète de toutes les analyses effectuées</p>
+  </div>
+  <div class="topbar-actions">
+    <a href="/historique/export_csv" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-download me-1"></i> Exporter CSV
+    </a>
+    <a href="/historique/supprimer_tout" class="btn btn-sm btn-outline-danger"
+       onclick="return confirm('Supprimer tout l\'historique ?')">
+      <i class="bi bi-trash me-1"></i> Tout supprimer
+    </a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card h-100">
+      <div class="card-body d-flex justify-content-between align-items-center p-3">
+        <div>
+          <div style="font-size:0.72rem;color:#7d8590;text-transform:uppercase;letter-spacing:0.08em;">Total Scans</div>
+          <div class="fw-bold font-mono" style="font-size:2rem;color:#58a6ff;">{{ stats.total }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;">analyses</div>
+        </div>
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(88,166,255,0.12);display:flex;align-items:center;justify-content:center;border:1px solid rgba(88,166,255,0.2);">
+          <i class="bi bi-activity" style="font-size:1.3rem;color:#58a6ff;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card h-100" style="border-color:rgba(248,81,73,0.25);">
+      <div class="card-body d-flex justify-content-between align-items-center p-3">
+        <div>
+          <div style="font-size:0.72rem;color:#7d8590;text-transform:uppercase;letter-spacing:0.08em;">Attaques</div>
+          <div class="fw-bold font-mono" style="font-size:2rem;color:#f85149;">{{ stats.critiques }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;">critiques</div>
+        </div>
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(248,81,73,0.12);display:flex;align-items:center;justify-content:center;border:1px solid rgba(248,81,73,0.2);">
+          <i class="bi bi-shield-x" style="font-size:1.3rem;color:#f85149;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card h-100" style="border-color:rgba(227,179,65,0.25);">
+      <div class="card-body d-flex justify-content-between align-items-center p-3">
+        <div>
+          <div style="font-size:0.72rem;color:#7d8590;text-transform:uppercase;letter-spacing:0.08em;">Suspects</div>
+          <div class="fw-bold font-mono" style="font-size:2rem;color:#e3b341;">{{ stats.moyens }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;">comportements</div>
+        </div>
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(227,179,65,0.12);display:flex;align-items:center;justify-content:center;border:1px solid rgba(227,179,65,0.2);">
+          <i class="bi bi-exclamation-triangle" style="font-size:1.3rem;color:#e3b341;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card h-100" style="border-color:rgba(63,185,80,0.25);">
+      <div class="card-body d-flex justify-content-between align-items-center p-3">
+        <div>
+          <div style="font-size:0.72rem;color:#7d8590;text-transform:uppercase;letter-spacing:0.08em;">Normaux</div>
+          <div class="fw-bold font-mono" style="font-size:2rem;color:#3fb950;">{{ stats.infos }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;">trafic sain</div>
+        </div>
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(63,185,80,0.12);display:flex;align-items:center;justify-content:center;border:1px solid rgba(63,185,80,0.2);">
+          <i class="bi bi-shield-check" style="font-size:1.3rem;color:#3fb950;"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <span><i class="bi bi-funnel me-2"></i>Filtres</span>
+  </div>
+  <div class="card-body p-3">
+    <form method="GET" action="{{ url_for('historique') }}" class="row g-2 align-items-end" id="form-filtres">
+      <div class="col-md-4">
+        <label style="font-size:0.75rem;color:#7d8590;margin-bottom:4px;">Recherche IP</label>
+        <div class="input-group">
+          <span class="input-group-text" style="background:#0d1117;border-color:#1e2d40;color:#7d8590;">
+            <i class="bi bi-search" style="font-size:0.8rem;"></i>
+          </span>
+          <input type="text" name="search" class="form-control font-mono"
+                 placeholder="192.168.1.x" value="{{ search }}"/>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <label style="font-size:0.75rem;color:#7d8590;margin-bottom:4px;">Résultat</label>
+        <select name="severite" class="form-select">
+          <option value="all"      {% if severite=='all' %}selected{% endif %}>Tous</option>
+          <option value="Critique" {% if severite=='Critique' %}selected{% endif %}>🔴 Attaque</option>
+          <option value="Moyen"    {% if severite=='Moyen' %}selected{% endif %}>🟡 Suspect</option>
+          <option value="Info"     {% if severite=='Info' %}selected{% endif %}>🟢 Normal</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label style="font-size:0.75rem;color:#7d8590;margin-bottom:4px;">Date début</label>
+        <input type="date" name="date_debut" class="form-control font-mono" value="{{ date_debut }}"/>
+      </div>
+      <div class="col-md-2">
+        <label style="font-size:0.75rem;color:#7d8590;margin-bottom:4px;">Date fin</label>
+        <input type="date" name="date_fin" class="form-control font-mono" value="{{ date_fin }}"/>
+      </div>
+      <div class="col-md-1">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-funnel-fill"></i> Filtrer
+        </button>
+      </div>
+      <div class="col-md-1">
+        <button type="button" class="btn btn-outline-secondary w-100" onclick="resetFiltres()">
+          <i class="bi bi-arrow-counterclockwise"></i> Reset
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span>
+      <i class="bi bi-table me-2"></i>Historique Complet
+      <span class="badge ms-1" style="background:rgba(47,129,247,0.15);color:#58a6ff;border:1px solid rgba(47,129,247,0.2);font-size:0.72rem;">
+        {{ scans | length }}
+      </span>
+    </span>
+  </div>
+  <div class="card-body p-0" style="overflow-x:auto;">
+    <table class="table table-hover mb-0" style="min-width:1100px;">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Date</th>
+          <th>IP Analysée</th>
+          <th>Résultat</th>
+          <th>Paquets</th>
+          <th>Rate</th>
+          <th>SYN count</th>
+          <th>Ports testés</th>
+          <th>Durée</th>
+          <th>Sévérité</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if scans %}
+          {% for s in scans %}
+          <tr>
+            <td class="font-mono" style="font-size:0.78rem;color:#484f58;">#{{ s.id }}</td>
+            <td class="font-mono" style="font-size:0.78rem;color:#7d8590;">{{ s.date }}</td>
+            <td class="font-mono" style="color:#58a6ff;">{{ s.ip }}</td>
+            <td style="font-size:0.85rem;max-width:220px;">
+              <span title="{{ s.type }}">
+                {% if s.type | length > 35 %}
+                  {{ s.type[:35] }}...
+                {% else %}
+                  {{ s.type }}
+                {% endif %}
+              </span>
+            </td>
+            <td class="font-mono" style="font-size:0.8rem;">
+              {% if s.nb_paquets %}{{ s.nb_paquets }}{% else %}–{% endif %}
+            </td>
+            <td class="font-mono" style="font-size:0.8rem;">
+              {% if s.rate %}{{ s.rate }}{% else %}–{% endif %}
+            </td>
+            <td class="font-mono" style="font-size:0.8rem;color:#e3b341;">
+              {% if s.syn_count %}{{ s.syn_count }}{% else %}–{% endif %}
+            </td>
+            <td class="font-mono" style="font-size:0.8rem;color:#58a6ff;">
+              {% if s.ports_testes %}{{ s.ports_testes }}{% else %}–{% endif %}
+            </td>
+            <td class="font-mono" style="font-size:0.8rem;color:#7d8590;">
+              {% if s.duree %}{{ s.duree }}s{% else %}–{% endif %}
+            </td>
+            <td>
+              {% if s.severite == 'Critique' %}
+                <span class="badge" style="background:rgba(248,81,73,0.15);color:#f85149;border:1px solid rgba(248,81,73,0.3);font-size:0.7rem;">🔴 Critique</span>
+              {% elif s.severite == 'Moyen' %}
+                <span class="badge" style="background:rgba(227,179,65,0.15);color:#e3b341;border:1px solid rgba(227,179,65,0.3);font-size:0.7rem;">🟡 Moyen</span>
+              {% else %}
+                <span class="badge" style="background:rgba(88,166,255,0.15);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);font-size:0.7rem;">🟢 Info</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if s.statut == 'Auto' %}
+                <span class="badge" style="background:rgba(88,166,255,0.15);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);font-size:0.7rem;">
+                  <i class="bi bi-robot me-1"></i>IDS Live
+                </span>
+              {% elif s.statut == 'Traitée' %}
+                <span class="badge" style="background:rgba(63,185,80,0.15);color:#3fb950;border:1px solid rgba(63,185,80,0.3);font-size:0.7rem;">
+                  <i class="bi bi-check-circle me-1"></i>Manuel
+                </span>
+              {% else %}
+                <span class="badge" style="background:rgba(227,179,65,0.15);color:#e3b341;border:1px solid rgba(227,179,65,0.3);font-size:0.7rem;">
+                  <i class="bi bi-person me-1"></i>Manuel
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="11" class="text-center py-5" style="color:#484f58;">
+              <i class="bi bi-clock-history d-block mb-2" style="font-size:2.5rem;color:#2f81f7;"></i>
+              <div style="font-size:0.9rem;">Aucun scan enregistré</div>
+              <div style="font-size:0.78rem;margin-top:4px;">Lancez une analyse depuis le tableau de bord 🔍</div>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function resetFiltres() {
+    window.location.href = "{{ url_for('historique') }}";
+  }
+</script>
+
+{% endblock %}

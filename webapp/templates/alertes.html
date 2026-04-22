@@ -2,98 +2,180 @@
 {% set page = "alertes" %}
 
 {% block content %}
-<div class="mb-4">
-  <h1 class="fw-bold">Gestion des Alertes</h1>
-  <p class="text-secondary">Surveillance et analyse des scans détectés</p>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <h1><i class="bi bi-exclamation-triangle me-2 text-danger"></i>Gestion des Alertes</h1>
+    <p>Surveillance et analyse des scans détectés</p>
+  </div>
+  <div class="topbar-actions">
+    <a href="/alertes/export_csv" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-download me-1"></i> Exporter CSV
+    </a>
+    <a href="/alertes/supprimer_tout" class="btn btn-sm btn-outline-danger"
+       onclick="return confirm('Supprimer toutes les alertes ?')">
+      <i class="bi bi-trash me-1"></i> Tout supprimer
+    </a>
+  </div>
 </div>
 
-<!-- Compteurs sévérité -->
 <div class="row g-3 mb-4">
   {% for level, count in counts.items() %}
+  {% if level == 'Critique' %}
+    {% set border_color = 'rgba(248,81,73,0.25)' %}
+    {% set text_color = '#f85149' %}
+    {% set bg_color = 'rgba(248,81,73,0.12)' %}
+    {% set icon_border = 'rgba(248,81,73,0.2)' %}
+    {% set icon = 'bi-x-circle' %}
+  {% elif level == 'Moyen' %}
+    {% set border_color = 'rgba(227,179,65,0.25)' %}
+    {% set text_color = '#e3b341' %}
+    {% set bg_color = 'rgba(227,179,65,0.12)' %}
+    {% set icon_border = 'rgba(227,179,65,0.2)' %}
+    {% set icon = 'bi-dash-circle' %}
+  {% else %}
+    {% set border_color = 'rgba(88,166,255,0.25)' %}
+    {% set text_color = '#58a6ff' %}
+    {% set bg_color = 'rgba(88,166,255,0.12)' %}
+    {% set icon_border = 'rgba(88,166,255,0.2)' %}
+    {% set icon = 'bi-info-circle' %}
+  {% endif %}
   <div class="col-md-4">
-    <div class="card">
+    <div class="card h-100" style="border-color:{{ border_color }};">
       <div class="card-body d-flex justify-content-between align-items-center p-3">
         <div>
-          <div class="text-secondary small">{{ level }}</div>
-          <div class="fs-3 fw-bold font-monospace">{{ count }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;text-transform:uppercase;letter-spacing:0.08em;">{{ level }}</div>
+          <div class="fw-bold font-mono" style="font-size:2rem;color:{{ text_color }};">{{ count }}</div>
+          <div style="font-size:0.72rem;color:#7d8590;">alertes</div>
         </div>
-        <span class="status-dot
-          {% if level == 'Critique' %}bg-danger
-          {% elif level == 'Moyen' %}bg-warning
-          {% else %}bg-info{% endif %}"
-          style="width:12px;height:12px;">
-        </span>
+        <div style="width:44px;height:44px;border-radius:10px;
+          background:{{ bg_color }};
+          display:flex;align-items:center;justify-content:center;
+          border:1px solid {{ icon_border }};">
+          <i class="bi {{ icon }}" style="font-size:1.3rem;color:{{ text_color }};"></i>
+        </div>
       </div>
     </div>
   </div>
   {% endfor %}
 </div>
 
-<!-- Filtres -->
 <div class="card mb-4">
-  <div class="card-header">Filtres</div>
-  <div class="card-body">
-    <form method="GET" action="/alertes" class="row g-2">
-      <div class="col-md-6">
-        <input type="text" name="search" class="form-control" placeholder="Rechercher par IP ou type..." value="{{ search }}"/>
+  <div class="card-header">
+    <span><i class="bi bi-funnel me-2"></i>Filtres</span>
+  </div>
+  <div class="card-body p-3">
+    <form method="GET" action="/alertes" class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <label style="font-size:0.75rem;color:#7d8590;margin-bottom:4px;">Recherche</label>
+        <div class="input-group">
+          <span class="input-group-text" style="background:#0d1117;border-color:#1e2d40;color:#7d8590;">
+            <i class="bi bi-search" style="font-size:0.8rem;"></i>
+          </span>
+          <input type="text" name="search" class="form-control"
+            placeholder="IP ou type d'alerte..." value="{{ search }}"/>
+        </div>
       </div>
       <div class="col-md-3">
+        <label style="font-size:0.75rem;color:#7d8590;margin-bottom:4px;">Sévérité</label>
         <select name="severite" class="form-select">
-          <option value="all" {% if severite=='all' %}selected{% endif %}>Toutes les sévérités</option>
-          <option value="Critique" {% if severite=='Critique' %}selected{% endif %}>Critique</option>
-          <option value="Moyen"    {% if severite=='Moyen' %}selected{% endif %}>Moyen</option>
-          <option value="Info"     {% if severite=='Info' %}selected{% endif %}>Info</option>
+          <option value="all" {% if severite=='all' %}selected{% endif %}>Toutes</option>
+          <option value="Critique" {% if severite=='Critique' %}selected{% endif %}>🔴 Critique</option>
+          <option value="Moyen"    {% if severite=='Moyen' %}selected{% endif %}>🟡 Moyen</option>
+          <option value="Info"     {% if severite=='Info' %}selected{% endif %}>🔵 Info</option>
         </select>
       </div>
       <div class="col-md-2">
         <button type="submit" class="btn btn-primary w-100">Filtrer</button>
       </div>
+      <div class="col-md-2">
+        <a href="{{ url_for('alertes') }}" class="btn btn-outline-secondary w-100">Réinitialiser</a
     </form>
   </div>
 </div>
 
-<!-- Tableau -->
 <div class="card">
-  <div class="card-header">Liste des Alertes ({{ alertes | length }})</div>
+  <div class="card-header">
+    <span><i class="bi bi-table me-2"></i>Liste des Alertes
+      <span class="badge ms-1" style="background:rgba(47,129,247,0.15);color:#58a6ff;border:1px solid rgba(47,129,247,0.2);font-size:0.72rem;">
+        {{ alertes | length }}
+      </span>
+    </span>
+  </div>
   <div class="card-body p-0">
     <table class="table table-hover mb-0">
       <thead>
         <tr>
-          <th>ID</th><th>Date</th><th>IP Source</th><th>Type</th><th>Sévérité</th><th>Statut</th><th>Actions</th>
+          <th>ID</th>
+          <th>Date</th>
+          <th>IP Source</th>
+          <th>Type</th>
+          <th>Paquets</th>
+          <th>Rate</th>
+          <th>Sévérité</th>
+          <th>Statut</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% if alertes %}
           {% for a in alertes %}
           <tr>
-            <td class="font-monospace text-secondary">#{{ a.id }}</td>
-            <td class="font-monospace small">{{ a.date }}</td>
-            <td class="font-monospace">{{ a.ip }}</td>
-            <td>{{ a.type }}</td>
-            <td><span class="badge badge-{{ a.severite | lower }}">{{ a.severite }}</span></td>
+            <td class="font-mono" style="font-size:0.78rem;color:#484f58;">#{{ a.id }}</td>
+            <td class="font-mono" style="font-size:0.78rem;color:#7d8590;">{{ a.date }}</td>
+            <td class="font-mono" style="color:#58a6ff;">{{ a.ip }}</td>
+            <td style="font-size:0.85rem;">{{ a.type }}</td>
+            <td class="font-mono" style="font-size:0.8rem;">
+              {% if a.nb_paquets %}{{ a.nb_paquets }}{% else %}–{% endif %}
+            </td>
+            <td class="font-mono" style="font-size:0.8rem;">
+              {% if a.rate %}{{ a.rate }}{% else %}–{% endif %}
+            </td>
             <td>
-              {% if a.statut == 'Nouvelle' %}
-                <span class="badge bg-warning text-dark">Nouvelle</span>
+              {% if a.severite == 'Critique' %}
+                <span class="badge" style="background:rgba(248,81,73,0.15);color:#f85149;border:1px solid rgba(248,81,73,0.3);font-size:0.7rem;">Critique</span>
+              {% elif a.severite == 'Moyen' %}
+                <span class="badge" style="background:rgba(227,179,65,0.15);color:#e3b341;border:1px solid rgba(227,179,65,0.3);font-size:0.7rem;">Moyen</span>
               {% else %}
-                <span class="badge bg-success">Traitée</span>
+                <span class="badge" style="background:rgba(88,166,255,0.15);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);font-size:0.7rem;">Info</span>
               {% endif %}
             </td>
             <td>
               {% if a.statut == 'Nouvelle' %}
-              <a href="/alertes/traiter/{{ a.id }}" class="btn btn-sm btn-outline-success">
-                <i class="bi bi-check"></i> Traiter
-              </a>
+                <span class="badge" style="background:rgba(227,179,65,0.15);color:#e3b341;border:1px solid rgba(227,179,65,0.3);font-size:0.7rem;">Nouvelle</span>
+              {% elif a.statut == 'Auto' %}
+                <span class="badge" style="background:rgba(88,166,255,0.15);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);font-size:0.7rem;">Auto</span>
+              {% else %}
+                <span class="badge" style="background:rgba(63,185,80,0.15);color:#3fb950;border:1px solid rgba(63,185,80,0.3);font-size:0.7rem;">Traitée</span>
               {% endif %}
+            </td>
+            <td>
+              <div class="d-flex gap-1">
+                {% if a.statut == 'Nouvelle' or a.statut == 'Auto' %}
+                <a href="/alertes/traiter/{{ a.id }}" class="btn btn-sm btn-outline-success" title="Traiter">
+                  <i class="bi bi-check-lg"></i>
+                </a>
+                {% endif %}
+                <a href="/alertes/supprimer/{{ a.id }}" class="btn btn-sm btn-outline-danger"
+                   onclick="return confirm('Supprimer cette alerte ?')" title="Supprimer">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
             </td>
           </tr>
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="7" class="text-center text-secondary py-4">Aucune alerte trouvée</td>
+            <td colspan="9" class="text-center py-5" style="color:#484f58;">
+              <i class="bi bi-shield-check d-block mb-2" style="font-size:2.5rem;color:#3fb950;"></i>
+              <div style="font-size:0.9rem;">Aucune alerte trouvée</div>
+              <div style="font-size:0.78rem;margin-top:4px;">Le réseau semble calme 🟢</div>
+            </td>
           </tr>
         {% endif %}
       </tbody>
     </table>
   </div>
 </div>
+
 {% endblock %}
