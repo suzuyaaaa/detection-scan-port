@@ -6,6 +6,10 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
+pytest-cache-files-*/
+tests/.tmp/
+tests/pytest-cache-files-*/
 
 # Fichiers journaux
 *.log

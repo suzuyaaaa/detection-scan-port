@@ -12,9 +12,29 @@ from network.capture_traffic import capture_ip_traffic
 app = Flask(__name__)
 DB_PATH = "netscan.db"
 
-# Charger modèle ML
-model = joblib.load("ml/model.pkl")
-encoders = joblib.load("ml/encoders.pkl")
+# Charger modèle ML.
+# En CI/tests, on peut désactiver le chargement des fichiers .pkl avec
+# NETSCAN_SKIP_MODEL_LOAD=1 pour tester Flask sans dépendre du modèle lourd.
+class _NoOpModel:
+    def predict(self, df):
+        return [0]
+
+
+class _IdentityEncoder:
+    def transform(self, values):
+        return list(values)
+
+
+if os.environ.get("NETSCAN_SKIP_MODEL_LOAD") == "1":
+    model = _NoOpModel()
+    encoders = {
+        "proto": _IdentityEncoder(),
+        "service": _IdentityEncoder(),
+        "state": _IdentityEncoder(),
+    }
+else:
+    model = joblib.load("ml/model.pkl")
+    encoders = joblib.load("ml/encoders.pkl")
 
 # ─── Init base de données ───────────────────────────────────────────────────
 
@@ -262,4 +282,13 @@ def api_types():
 
 if __name__ == "__main__":
     init_db()
+<<<<<<< Updated upstream
     app.run(debug=True)
+=======
+
+    thread = threading.Thread(target=run_ids)
+    thread.daemon = True
+    thread.start()
+
+    app.run(debug=True, use_reloader=False)
+>>>>>>> Stashed changes
