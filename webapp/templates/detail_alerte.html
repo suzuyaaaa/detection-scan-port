@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+{% set page = "alertes" %}
+
+{% block content %}
+
+<div class="topbar">
+  <div class="topbar-title">
+    <h1><i class="bi bi-shield-exclamation me-2 text-danger"></i>Détail de l'Alerte #{{ alerte.id }}</h1>
+    <p>Analyse complète de l'événement de sécurité détecté</p>
+  </div>
+  <div class="topbar-actions">
+    <a href="/alertes" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Retour aux alertes
+    </a>
+    {% if alerte.statut == 'Nouvelle' or alerte.statut == 'Auto' %}
+    <a href="/alertes/traiter/{{ alerte.id }}" class="btn btn-sm btn-outline-success">
+      <i class="bi bi-check-lg me-1"></i> Marquer comme traitée
+    </a>
+    {% endif %}
+    <a href="/alertes/supprimer/{{ alerte.id }}" class="btn btn-sm btn-outline-danger"
+       onclick="return confirm('Supprimer cette alerte ?')">
+      <i class="bi bi-trash me-1"></i> Supprimer
+    </a>
+  </div>
+</div>
+
+<!-- Bannière de sévérité -->
+{% if alerte.severite == 'Critique' %}
+  {% set sev_bg = 'rgba(248,81,73,0.08)' %}
+  {% set sev_border = 'rgba(248,81,73,0.4)' %}
+  {% set sev_color = '#f85149' %}
+  {% set sev_label = '🔴 ATTAQUE CRITIQUE' %}
+{% elif alerte.severite == 'Moyen' %}
+  {% set sev_bg = 'rgba(227,179,65,0.08)' %}
+  {% set sev_border = 'rgba(227,179,65,0.4)' %}
+  {% set sev_color = '#e3b341' %}
+  {% set sev_label = '🟡 COMPORTEMENT SUSPECT' %}
+{% else %}
+  {% set sev_bg = 'rgba(63,185,80,0.08)' %}
+  {% set sev_border = 'rgba(63,185,80,0.4)' %}
+  {% set sev_color = '#3fb950' %}
+  {% set sev_label = '🟢 TRAFIC NORMAL' %}
+{% endif %}
+
+<div class="mb-4 p-3 rounded d-flex align-items-center gap-3"
+     style="background:{{ sev_bg }};border:1px solid {{ sev_border }};">
+  <i class="bi {{ attack_info.icon }}" style="font-size:2rem;color:{{ attack_info.color }};"></i>
+  <div>
+    <div style="font-size:0.7rem;color:{{ sev_color }};text-transform:uppercase;letter-spacing:0.12em;font-weight:700;">{{ sev_label }}</div>
+    <div style="font-size:1.1rem;font-weight:700;color:{{ attack_info.color }};">{{ attack_info.type }}</div>
+    <div style="font-size:0.82rem;color:#7d8590;margin-top:2px;">{{ attack_info.desc }}</div>
+  </div>
+  <div class="ms-auto text-end">
+    <div style="font-size:0.7rem;color:#7d8590;">Risque estimé</div>
+    <div style="font-size:1.1rem;font-weight:700;color:{{ attack_info.color }};">{{ attack_info.risk }}</div>
+    <div style="font-size:0.7rem;color:#484f58;">MITRE ATT&CK</div>
+    <div class="font-mono" style="font-size:0.72rem;color:#58a6ff;">{{ attack_info.mitre }}</div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+
+  <!-- Infos réseau -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-diagram-3 me-2 text-primary"></i>Informations Réseau</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table mb-0">
+          <tbody>
+            <tr>
+              <td style="color:#7d8590;font-size:0.8rem;width:45%;border-color:#1e2d40;">
+                <i class="bi bi-arrow-up-right me-1 text-danger"></i>IP Attaquante (Source)
+              </td>
+              <td class="font-mono" style="font-size:0.9rem;color:#f85149;font-weight:700;border-color:#1e2d40;">
+                {{ alerte.ip }}
+              </td>
+            </tr>
+            <tr>
+              <td style="color:#7d8590;font-size:0.8rem;border-color:#1e2d40;">
+                <i class="bi bi-arrow-down-left me-1 text-success"></i>IP Cible (Destination)
+              </td>
+              <td class="font-mono" style="font-size:0.9rem;color:#3fb950;border-color:#1e2d40;">
+                Machine surveillée (locale)
+              </td>
+            </tr>
+            <tr>
+              <td style="color:#7d8590;font-size:0.8rem;border-color:#1e2d40;">
+                <i class="bi bi-layers me-1"></i>Protocole
+              </td>
+              <td class="font-mono" style="color:#58a6ff;border-color:#1e2d40;">TCP</td>
+            </tr>
+            <tr>
+              <td style="color:#7d8590;font-size:0.8rem;border-color:#1e2d40;">
+                <i class="bi bi-flag me-1"></i>Flags TCP détectés
+              </td>
+              <td class="font-mono" style="border-color:#1e2d40;">
+                <span class="badge me-1" style="background:rgba(248,81,73,0.12);color:#f85149;border:1px solid rgba(248,81,73,0.3);">SYN</span>
+                {% if alerte.syn_count and alerte.syn_count > 50 %}
+                <span class="badge" style="background:rgba(227,179,65,0.12);color:#e3b341;border:1px solid rgba(227,179,65,0.3);">RST</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td style="color:#7d8590;font-size:0.8rem;border-color:#1e2d40;">
+                <i class="bi bi-door-open me-1"></i>Ports testés
+              </td>
+              <td class="font-mono" style="color:#e3b341;font-weight:600;border-color:#1e2d40;">
+                {% if alerte.ports_testes %}{{ alerte.ports_testes }} ports{% else %}–{% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td style="color:#7d8590;font-size:0.8rem;border-color:#1e2d40;">
+                <i class="bi bi-calendar me-1"></i>Date / Heure
+              </td>
+              <td class="font-mono" style="font-size:0.82rem;color:#7d8590;border-color:#1e2d40;">{{ alerte.date }}</td>
+            </tr>
+            <tr>
+              <td style="color:#7d8590;font-size:0.8rem;border-color:#1e2d40;">
+                <i class="bi bi-clock me-1"></i>Durée de capture
+              </td>
+              <td class="font-mono" style="border-color:#1e2d40;">
+                {% if alerte.duree %}{{ alerte.duree }}s{% else %}–{% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td style="color:#7d8590;font-size:0.8rem;border-color:#1e2d40;">
+                <i class="bi bi-tag me-1"></i>Type détecté
+              </td>
+              <td style="font-size:0.82rem;border-color:#1e2d40;">{{ alerte.type }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Métriques -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-bar-chart me-2 text-primary"></i>Métriques de l'Attaque</span>
+      </div>
+      <div class="card-body">
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between mb-1">
+            <span style="font-size:0.78rem;color:#7d8590;"><i class="bi bi-send me-1"></i>Paquets envoyés</span>
+            <span class="font-mono" style="font-size:0.82rem;color:#58a6ff;">
+              {{ alerte.nb_paquets or 0 }} pkts
+            </span>
+          </div>
+          <div class="progress" style="height:5px;background:#1e2d40;border-radius:3px;">
+            {% set pct_pkts = [(((alerte.nb_paquets or 0) / 200) * 100), 100] | min %}
+            <div class="progress-bar" style="width:{{ pct_pkts }}%;background:#58a6ff;border-radius:3px;"></div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between mb-1">
+            <span style="font-size:0.78rem;color:#7d8590;"><i class="bi bi-lightning me-1"></i>Paquets SYN</span>
+            <span class="font-mono" style="font-size:0.82rem;color:#f85149;">
+              {{ alerte.syn_count or 0 }} SYN
+            </span>
+          </div>
+          <div class="progress" style="height:5px;background:#1e2d40;border-radius:3px;">
+            {% set pct_syn = [(((alerte.syn_count or 0) / 150) * 100), 100] | min %}
+            <div class="progress-bar" style="width:{{ pct_syn }}%;background:#f85149;border-radius:3px;"></div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between mb-1">
+            <span style="font-size:0.78rem;color:#7d8590;"><i class="bi bi-speedometer2 me-1"></i>Vitesse (pkt/s)</span>
+            <span class="font-mono" style="font-size:0.82rem;color:#e3b341;">
+              {{ alerte.rate or 0 }} pkt/s
+            </span>
+          </div>
+          <div class="progress" style="height:5px;background:#1e2d40;border-radius:3px;">
+            {% set pct_rate = [(((alerte.rate or 0) / 50) * 100), 100] | min %}
+            <div class="progress-bar" style="width:{{ pct_rate }}%;background:#e3b341;border-radius:3px;"></div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between mb-1">
+            <span style="font-size:0.78rem;color:#7d8590;"><i class="bi bi-door-open me-1"></i>Ports scannés</span>
+            <span class="font-mono" style="font-size:0.82rem;color:#3fb950;">
+              {{ alerte.ports_testes or 0 }} ports
+            </span>
+          </div>
+          <div class="progress" style="height:5px;background:#1e2d40;border-radius:3px;">
+            {% set pct_ports = [(((alerte.ports_testes or 0) / 1000) * 100), 100] | min %}
+            <div class="progress-bar" style="width:{{ pct_ports }}%;background:#3fb950;border-radius:3px;"></div>
+          </div>
+        </div>
+
+        <div class="mt-3 p-2 rounded d-flex justify-content-between align-items-center"
+             style="background:#0d1117;border:1px solid #1e2d40;">
+          <span style="font-size:0.78rem;color:#7d8590;">Statut de traitement</span>
+          {% if alerte.statut == 'Nouvelle' %}
+            <span class="badge" style="background:rgba(227,179,65,0.15);color:#e3b341;border:1px solid rgba(227,179,65,0.3);">
+              <i class="bi bi-hourglass-split me-1"></i>Nouvelle
+            </span>
+          {% elif alerte.statut == 'Auto' %}
+            <span class="badge" style="background:rgba(88,166,255,0.15);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);">
+              <i class="bi bi-robot me-1"></i>Détectée auto (IDS Live)
+            </span>
+          {% else %}
+            <span class="badge" style="background:rgba(63,185,80,0.15);color:#3fb950;border:1px solid rgba(63,185,80,0.3);">
+              <i class="bi bi-check-circle me-1"></i>Traitée
+            </span>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Timeline -->
+{% if attack_info.phases %}
+<div class="card mb-4">
+  <div class="card-header">
+    <span><i class="bi bi-diagram-2 me-2 text-primary"></i>Timeline de l'Attaque</span>
+  </div>
+  <div class="card-body">
+    <div class="d-flex align-items-start" style="overflow-x:auto;gap:0;">
+      {% for phase in attack_info.phases %}
+      <div class="d-flex flex-column align-items-center text-center" style="flex:1;min-width:150px;padding:0 6px;">
+        <div style="width:40px;height:40px;border-radius:50%;
+             background:{{ phase.color }}22;border:2px solid {{ phase.color }};
+             display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
+          <i class="bi {{ phase.icon }}" style="color:{{ phase.color }};font-size:1rem;"></i>
+        </div>
+        <div style="font-size:0.65rem;color:{{ phase.color }};text-transform:uppercase;letter-spacing:0.1em;font-weight:700;">Étape {{ phase.step }}</div>
+        <div style="font-size:0.82rem;font-weight:600;color:#e6edf3;margin:4px 0;">{{ phase.label }}</div>
+        <div style="font-size:0.72rem;color:#7d8590;">{{ phase.desc }}</div>
+      </div>
+      {% if not loop.last %}
+      <div style="padding-top:18px;color:#484f58;font-size:1.2rem;">
+        <i class="bi bi-arrow-right"></i>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Règles déclenchées -->
+<div class="card mb-4">
+  <div class="card-header">
+    <span><i class="bi bi-shield-lock me-2 text-primary"></i>Règles IDS Déclenchées</span>
+    <span class="badge" style="background:rgba(248,81,73,0.12);color:#f85149;border:1px solid rgba(248,81,73,0.2);font-size:0.7rem;">
+      {{ regles | length }} règle(s)
+    </span>
+  </div>
+  <div class="card-body">
+    {% if regles %}
+      {% for r in regles %}
+      <div class="d-flex align-items-start gap-2 mb-2 p-2 rounded"
+           style="background:#0d1117;border:1px solid #1e2d40;">
+        <i class="bi bi-exclamation-circle-fill text-danger mt-1" style="font-size:0.8rem;flex-shrink:0;"></i>
+        <span style="font-size:0.85rem;">{{ r }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="font-size:0.85rem;color:#484f58;">
+        <i class="bi bi-info-circle me-1"></i>
+        Aucune règle spécifique déclenchée — détection par analyse comportementale ML.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recommandations -->
+<div class="card">
+  <div class="card-header">
+    <span><i class="bi bi-lightbulb me-2 text-warning"></i>Recommandations</span>
+  </div>
+  <div class="card-body">
+    {% if alerte.severite == 'Critique' %}
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="p-3 rounded" style="background:#0d1117;border:1px solid rgba(248,81,73,0.25);">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-ban" style="color:#f85149;"></i>
+            <span style="font-weight:600;font-size:0.85rem;">Bloquer l'IP</span>
+          </div>
+          <p style="font-size:0.78rem;color:#7d8590;margin:0;">
+            Ajouter <span class="font-mono" style="color:#f85149;">{{ alerte.ip }}</span> au pare-feu.
+          </p>
+          <div class="font-mono mt-2 p-2 rounded" style="background:#080b14;font-size:0.72rem;color:#e3b341;">
+            iptables -I INPUT -s {{ alerte.ip }} -j DROP
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="p-3 rounded" style="background:#0d1117;border:1px solid rgba(227,179,65,0.25);">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-eye" style="color:#e3b341;"></i>
+            <span style="font-weight:600;font-size:0.85rem;">Surveiller</span>
+          </div>
+          <p style="font-size:0.78rem;color:#7d8590;margin:0;">
+            Activer la journalisation réseau et surveiller toute connexion suivante depuis cette IP.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="p-3 rounded" style="background:#0d1117;border:1px solid rgba(63,185,80,0.25);">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-file-text" style="color:#3fb950;"></i>
+            <span style="font-weight:600;font-size:0.85rem;">Documenter</span>
+          </div>
+          <p style="font-size:0.78rem;color:#7d8590;margin:0;">
+            Exporter les alertes en CSV pour rapport d'incident.
+          </p>
+          <a href="/alertes/export_csv" class="btn btn-sm mt-2"
+             style="background:rgba(63,185,80,0.12);color:#3fb950;border:1px solid rgba(63,185,80,0.2);font-size:0.72rem;">
+            <i class="bi bi-download me-1"></i> Exporter CSV
+          </a>
+        </div>
+      </div>
+    </div>
+    {% elif alerte.severite == 'Moyen' %}
+    <p style="font-size:0.85rem;color:#7d8590;">
+      <i class="bi bi-exclamation-triangle me-1 text-warning"></i>
+      Surveiller l'IP <span class="font-mono" style="color:#e3b341;">{{ alerte.ip }}</span>
+      dans les prochaines heures. Si l'activité suspecte persiste, envisager un blocage préventif.
+    </p>
+    {% else %}
+    <p style="font-size:0.85rem;color:#7d8590;">
+      <i class="bi bi-shield-check me-1 text-success"></i>
+      Aucune action requise. Le trafic de <span class="font-mono" style="color:#3fb950;">{{ alerte.ip }}</span> est dans les normes habituelles.
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

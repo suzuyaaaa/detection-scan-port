@@ -150,18 +150,23 @@
               {% endif %}
             </td>
             <td>
-              <div class="d-flex gap-1">
-                {% if a.statut == 'Nouvelle' or a.statut == 'Auto' %}
-                <a href="/alertes/traiter/{{ a.id }}" class="btn btn-sm btn-outline-success" title="Traiter">
-                  <i class="bi bi-check-lg"></i>
-                </a>
-                {% endif %}
-                <a href="/alertes/supprimer/{{ a.id }}" class="btn btn-sm btn-outline-danger"
-                   onclick="return confirm('Supprimer cette alerte ?')" title="Supprimer">
-                  <i class="bi bi-trash"></i>
-                </a>
-              </div>
-            </td>
+  <div class="d-flex gap-1">
+    <a href="/alertes/{{ a.id }}" class="btn btn-sm btn-outline-secondary" title="Voir le détail">
+      <i class="bi bi-eye"></i>
+    </a>
+    {% if a.statut == 'Nouvelle' or a.statut == 'Auto' %}
+    <a href="/alertes/traiter/{{ a.id }}" class="btn btn-sm btn-outline-success" title="Traiter">
+      <i class="bi bi-check-lg"></i>
+    </a>
+    {% endif %}
+    <a href="/alertes/supprimer/{{ a.id }}" class="btn btn-sm btn-outline-danger"
+       onclick="return confirm('Supprimer cette alerte ?')" title="Supprimer">
+      <i class="bi bi-trash"></i>
+    </a>
+  </div>
+</td>
+            
+              
           </tr>
           {% endfor %}
         {% else %}
