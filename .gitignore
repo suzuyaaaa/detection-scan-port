@@ -17,10 +17,16 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Modèles ML temporaires 
-*.pkl
+# Modèles ML — on garde model.pkl et encoders.pkl sur GitHub
+# *.pkl  ← ne pas décommenter !
 
-# Dataset volumineux (optionnel, si tu ne veux pas pousser)
-#*.csv
-
+# Base de données locale (se recrée automatiquement au lancement)
 netscan.db
+
+# Tests
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Variables d'environnement
+.env

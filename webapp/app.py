@@ -718,9 +718,7 @@ def api_types():
 
     return jsonify({"labels": labels, "values": values})
 
-# ─── DÉTAIL D'UNE ALERTE ─────────────────────────────────────────────────────
-
-@app.route("/alertes/<int:id>")
+@app.route("/alertes/detail/<int:id>")
 def detail_alerte(id):
     conn = get_db()
     alerte = conn.execute("SELECT * FROM alertes WHERE id=?", (id,)).fetchone()
@@ -730,84 +728,108 @@ def detail_alerte(id):
         flash("❌ Alerte introuvable.", "error")
         return redirect(url_for("alertes"))
 
+    # ─── Détecter le type d'alerte ────────────────────────────────────────────
+    type_lower = (alerte["type"] or "").lower()
+
+    is_attack    = alerte["severite"] == "Critique"
+    is_suspect   = alerte["severite"] == "Moyen"
+    is_normal    = alerte["severite"] == "Info" and "normal" in type_lower
+    is_no_trafic = "aucun trafic" in type_lower
+    is_invalid   = any(x in type_lower for x in ["invalide", "réservée", "erreur"])
+
+    # ─── Infos enrichies selon le type d'attaque ──────────────────────────────
+    if is_attack:
+        if "syn" in type_lower or (alerte["syn_count"] or 0) > 80:
+            attack_info = {
+                "type"  : "SYN Stealth Scan",
+                "desc"  : "Scan furtif TCP SYN — l'attaquant sonde les ports ouverts sans établir de connexion complète.",
+                "icon"  : "bi-lightning-charge-fill",
+                "color" : "#f85149",
+                "risk"  : "Élevé",
+                "mitre" : "T1046 — Network Service Scanning",
+                "phases": [
+                    {"step":1,"label":"Découverte réseau","desc":"L'attaquant identifie les hôtes actifs","icon":"bi-search","color":"#58a6ff"},
+                    {"step":2,"label":"Envoi SYN","desc":"Paquets SYN envoyés sur chaque port","icon":"bi-arrow-up-right","color":"#e3b341"},
+                    {"step":3,"label":"Analyse réponses","desc":"SYN-ACK = ouvert, RST = fermé","icon":"bi-activity","color":"#f85149"},
+                    {"step":4,"label":"Cartographie","desc":"Liste des ports/services exposés","icon":"bi-map","color":"#3fb950"},
+                ],
+            }
+        else:
+            attack_info = {
+                "type"  : "Scan de ports",
+                "desc"  : "Balayage TCP/UDP — tentative d'identification des services actifs sur la cible.",
+                "icon"  : "bi-radar",
+                "color" : "#f85149",
+                "risk"  : "Élevé",
+                "mitre" : "T1046 — Network Service Scanning",
+                "phases": [
+                    {"step":1,"label":"Identification","desc":"Localisation de la cible","icon":"bi-search","color":"#58a6ff"},
+                    {"step":2,"label":"Balayage ports","desc":"Test de chaque port ciblé","icon":"bi-arrow-up-right","color":"#e3b341"},
+                    {"step":3,"label":"Collecte","desc":"Identification des services","icon":"bi-database","color":"#f85149"},
+                    {"step":4,"label":"Exploitation","desc":"Préparation d'une attaque ciblée","icon":"bi-bug","color":"#e3b341"},
+                ],
+            }
+
+    elif is_suspect:
+        attack_info = {
+            "type"  : "Comportement suspect (ML)",
+            "desc"  : "Le modèle ML a détecté un comportement anormal, sans règle IDS formelle déclenchée.",
+            "icon"  : "bi-cpu",
+            "color" : "#e3b341",
+            "risk"  : "Moyen",
+            "mitre" : "T1595 — Active Scanning",
+            "phases": [],
+        }
+
+    elif is_no_trafic:
+        attack_info = {
+            "type"  : "Aucun trafic capturé",
+            "desc"  : "Aucun paquet détecté pour cette IP pendant la durée de capture.",
+            "icon"  : "bi-wifi-off",
+            "color" : "#7d8590",
+            "risk"  : "Nul",
+            "mitre" : "—",
+            "phases": [],
+        }
+
+    elif is_invalid:
+        attack_info = {
+            "type"  : "Adresse IP invalide",
+            "desc"  : "L'adresse saisie est invalide ou réservée. Aucune analyse réseau effectuée.",
+            "icon"  : "bi-x-circle",
+            "color" : "#7d8590",
+            "risk"  : "Nul",
+            "mitre" : "—",
+            "phases": [],
+        }
+
+    else:
+        attack_info = {
+            "type"  : "Trafic normal",
+            "desc"  : "Le trafic analysé correspond à un comportement réseau habituel. Aucune menace détectée.",
+            "icon"  : "bi-shield-check",
+            "color" : "#3fb950",
+            "risk"  : "Nul",
+            "mitre" : "—",
+            "phases": [],
+        }
+
+    # ─── Règles déclenchées ───────────────────────────────────────────────────
     regles = []
     if alerte["regles_declenchees"]:
         regles = [r.strip() for r in alerte["regles_declenchees"].split("|") if r.strip()]
 
-    attack_info = _analyser_type_attaque(alerte, regles)
-
-    return render_template("detail_alerte.html", alerte=alerte, regles=regles, attack_info=attack_info)
-
-
-def _analyser_type_attaque(alerte, regles):
-    syn   = alerte["syn_count"]    or 0
-    ports = alerte["ports_testes"] or 0
-    rate  = alerte["rate"]         or 0
-    pkts  = alerte["nb_paquets"]   or 0
-    dur   = alerte["duree"]        or 0
-
-    if syn > 100:
-        attack_type  = "SYN Flood"
-        attack_desc  = "Envoi massif de paquets SYN sans compléter la poignée de main TCP. Objectif : saturer les ressources de la cible."
-        attack_icon  = "bi-lightning-fill"
-        attack_color = "#f85149"
-        mitre        = "T1498 — Network Denial of Service"
-        risk         = "Très élevé"
-    elif ports > 50:
-        attack_type  = "Scan de ports agressif (Nmap -sS)"
-        attack_desc  = "Balayage SYN sur un grand nombre de ports. L'attaquant cherche des services ouverts sans établir de connexion complète."
-        attack_icon  = "bi-radar"
-        attack_color = "#f85149"
-        mitre        = "T1046 — Network Service Discovery"
-        risk         = "Élevé"
-    elif ports > 15:
-        attack_type  = "Scan de ports modéré"
-        attack_desc  = "Sondage de plusieurs ports TCP. Peut indiquer une reconnaissance réseau avant une attaque plus ciblée."
-        attack_icon  = "bi-search"
-        attack_color = "#e3b341"
-        mitre        = "T1046 — Network Service Discovery"
-        risk         = "Moyen"
-    elif rate > 10:
-        attack_type  = "Trafic anormalement rapide"
-        attack_desc  = "Volume de paquets par seconde très supérieur à la normale. Peut indiquer un flood ou un outil automatisé."
-        attack_icon  = "bi-speedometer2"
-        attack_color = "#e3b341"
-        mitre        = "T1498 — Network Denial of Service"
-        risk         = "Moyen"
-    elif "ML" in str(alerte["type"]):
-        attack_type  = "Comportement suspect (ML)"
-        attack_desc  = "Le modèle ML a détecté un comportement statistiquement anormal par rapport au trafic réseau habituel."
-        attack_icon  = "bi-cpu"
-        attack_color = "#e3b341"
-        mitre        = "T1040 — Network Sniffing"
-        risk         = "Moyen"
-    else:
-        attack_type  = "Trafic normal"
-        attack_desc  = "Aucun comportement malveillant détecté."
-        attack_icon  = "bi-shield-check"
-        attack_color = "#3fb950"
-        mitre        = "—"
-        risk         = "Aucun"
-
-    phases = []
-    if "Scan" in attack_type or "Flood" in attack_type:
-        phases = [
-            {"step": "1", "label": "Reconnaissance", "desc": "L'attaquant identifie l'IP cible sur le réseau local",    "icon": "bi-binoculars",        "color": "#58a6ff"},
-            {"step": "2", "label": "Lancement scan",  "desc": f"Envoi de {pkts} paquets TCP SYN vers la cible",          "icon": "bi-send",              "color": "#e3b341"},
-            {"step": "3", "label": "Détection IDS",   "desc": f"NetScan détecte l'anomalie après {dur:.1f}s de capture", "icon": "bi-shield-exclamation","color": "#f85149"},
-            {"step": "4", "label": "Alerte générée",  "desc": f"Alerte {alerte['severite']} enregistrée en base",        "icon": "bi-bell-fill",         "color": "#3fb950"},
-        ]
-
-    return {
-        "type":   attack_type,
-        "desc":   attack_desc,
-        "icon":   attack_icon,
-        "color":  attack_color,
-        "mitre":  mitre,
-        "risk":   risk,
-        "phases": phases,
-    }
-
+    return render_template(
+        "detail_alerte.html",
+        alerte       = alerte,
+        attack_info  = attack_info,
+        regles       = regles,
+        is_attack    = is_attack,
+        is_suspect   = is_suspect,
+        is_normal    = is_normal,
+        is_no_trafic = is_no_trafic,
+        is_invalid   = is_invalid,
+    )
 # ─── LANCEMENT ──────────────────────────────────────────────────────────────
 
 def run_ids():

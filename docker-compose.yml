@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────
+# NetScan IDS — Docker Compose
+# ─────────────────────────────────────────────
+
+version: "3.8"
+
+services:
+
+  netscan:
+    build: .
+    container_name: netscan-ids
+    image: netscan-ids:latest
+
+    # Accès réseau complet (nécessaire pour Scapy)
+    network_mode: host
+
+    # Privilèges pour capturer le trafic réseau
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+
+    ports:
+      - "5000:5000"
+
+    volumes:
+      # Persistance de la base de données SQLite
+      - ./data:/app/data
+      - ./netscan.db:/app/netscan.db
+
+    environment:
+      - FLASK_ENV=production
+      - SESSION_SECRET=netscan-secret-key-change-in-prod
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:5000')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
