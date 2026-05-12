@@ -3,8 +3,27 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
+<<<<<<< Updated upstream
 
 os.environ.setdefault("NETSCAN_SKIP_MODEL_LOAD", "1")
+=======
+import sys
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+WEBAPP_DIR = ROOT_DIR / "webapp"
+if str(WEBAPP_DIR) not in sys.path:
+    sys.path.insert(0, str(WEBAPP_DIR))
+
+# ── Mock des modules qui nécessitent du matériel réseau ──────────────────────
+sys.modules['scapy']                    = MagicMock()
+sys.modules['scapy.all']               = MagicMock()
+sys.modules['network.capture_traffic'] = MagicMock()
+sys.modules['network.simulate_attack'] = MagicMock()
+sys.modules['network.live_ids']        = MagicMock()
+sys.modules['joblib']                  = MagicMock()
+>>>>>>> Stashed changes
 
 from webapp import app as app_module
 
@@ -79,6 +98,7 @@ def test_init_db_creates_default_rules(client):
     assert "Détection scan de ports" in names
 
 
+<<<<<<< Updated upstream
 def test_dashboard_loads_without_alerts(client):
     response = client.get("/")
 
@@ -171,3 +191,21 @@ def test_attack_analysis_classifies_syn_flood(client):
     assert info["type"] == "SYN Flood"
     assert info["risk"] == "Très élevé"
     assert len(info["phases"]) == 4
+=======
+    def test_toggle_regle(self, client):
+        """On doit pouvoir activer/désactiver une règle."""
+        conn = netscan.get_db()
+        regle = conn.execute("SELECT id, active FROM regles LIMIT 1").fetchone()
+        conn.close()
+        if regle:
+            etat_initial = regle['active']
+            client.get(f'/regles/toggle/{regle["id"]}',
+                       follow_redirects=True)
+            conn = netscan.get_db()
+            regle_apres = conn.execute(
+                "SELECT active FROM regles WHERE id=?", (regle['id'],)
+            ).fetchone()
+            conn.close()
+            assert regle_apres['active'] != etat_initial, "❌ Toggle n'a pas fonctionné"
+            print("✅ Toggle règle OK")
+>>>>>>> Stashed changes
