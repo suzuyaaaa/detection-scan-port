@@ -17,9 +17,9 @@ name: NetScan IDS CI/CD
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, branche1]   # ✅ ajout de branche1
   pull_request:
-    branches: [main, master]
+    branches: [main, master, branche1]
 
 env:
   PYTHON_VERSION: "3.10"
