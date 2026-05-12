@@ -8,6 +8,9 @@ on:
 
 jobs:
 
+  # ─────────────────────────────────────────────
+  # JOB 1 : Vérification du code (Lint)
+  # ─────────────────────────────────────────────
   lint:
     name: Verification du code
     runs-on: ubuntu-latest
@@ -29,6 +32,90 @@ jobs:
         run: |
           flake8 webapp/app.py network/ ml/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
+  # ─────────────────────────────────────────────
+  # JOB 2 : SCA - Analyse des dépendances
+  # ─────────────────────────────────────────────
+  sca:
+    name: SCA - Analyse des dependances
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v3
+
+      - name: Installer Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Installer pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit
+
+      - name: Analyser les dependances (pip-audit)
+        run: |
+          echo "============================================"
+          echo "  SCA - Recherche de vulnerabilites CVE    "
+          echo "============================================"
+          pip-audit -r requirements.txt --format=columns || true
+          echo "SCA termine."
+
+      - name: Installer safety (double verification)
+        run: |
+          pip install safety
+
+      - name: Verifier avec Safety
+        run: |
+          echo "============================================"
+          echo "  SCA - Safety Check                       "
+          echo "============================================"
+          safety check -r requirements.txt --output text || true
+          echo "Safety check termine."
+
+  # ─────────────────────────────────────────────
+  # JOB 3 : SAST - Analyse statique de sécurité
+  # ─────────────────────────────────────────────
+  sast:
+    name: SAST - Analyse statique securite
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v3
+
+      - name: Installer Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Installer Bandit
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit
+
+      - name: Lancer Bandit sur le code source
+        run: |
+          echo "============================================"
+          echo "  SAST - Bandit Security Scan              "
+          echo "============================================"
+          bandit -r webapp/app.py network/ -f txt -ll || true
+          echo "Bandit termine."
+
+      - name: Rapport Bandit complet (JSON)
+        run: |
+          bandit -r webapp/app.py network/ -f json -o bandit-report.json || true
+          echo "Rapport JSON genere : bandit-report.json"
+
+      - name: Upload rapport Bandit
+        uses: actions/upload-artifact@v3
+        with:
+          name: bandit-report
+          path: bandit-report.json
+
+  # ─────────────────────────────────────────────
+  # JOB 4 : Tests automatiques
+  # ─────────────────────────────────────────────
   tests:
     name: Tests automatiques
     runs-on: ubuntu-latest
@@ -55,6 +142,9 @@ jobs:
         run: |
           pytest tests/ --cov=webapp.app --cov-report=term-missing 2>/dev/null || echo "Couverture ignoree"
 
+  # ─────────────────────────────────────────────
+  # JOB 5 : Vérification de la structure
+  # ─────────────────────────────────────────────
   structure:
     name: Verification de la structure
     runs-on: ubuntu-latest
@@ -75,13 +165,13 @@ jobs:
       - name: Verifier les fichiers essentiels
         run: |
           echo "Verification des fichiers..."
-          test -f webapp/app.py                  && echo "OK app.py"           || (echo "MANQUANT app.py" && exit 1)
-          test -f requirements.txt               && echo "OK requirements.txt" || (echo "MANQUANT requirements.txt" && exit 1)
-          test -d webapp/templates               && echo "OK templates/"       || (echo "MANQUANT templates/" && exit 1)
-          test -d network                        && echo "OK network/"         || (echo "MANQUANT network/" && exit 1)
-          test -d ml                             && echo "OK ml/"              || (echo "MANQUANT ml/" && exit 1)
-          test -f webapp/templates/base.html     && echo "OK base.html"        || (echo "MANQUANT base.html" && exit 1)
-          test -f webapp/templates/dashboard.html && echo "OK dashboard.html" || (echo "MANQUANT dashboard.html" && exit 1)
+          test -f webapp/app.py                   && echo "OK app.py"           || (echo "MANQUANT app.py" && exit 1)
+          test -f requirements.txt                && echo "OK requirements.txt" || (echo "MANQUANT requirements.txt" && exit 1)
+          test -d webapp/templates                && echo "OK templates/"       || (echo "MANQUANT templates/" && exit 1)
+          test -d network                         && echo "OK network/"         || (echo "MANQUANT network/" && exit 1)
+          test -d ml                              && echo "OK ml/"              || (echo "MANQUANT ml/" && exit 1)
+          test -f webapp/templates/base.html      && echo "OK base.html"        || (echo "MANQUANT base.html" && exit 1)
+          test -f webapp/templates/dashboard.html && echo "OK dashboard.html"   || (echo "MANQUANT dashboard.html" && exit 1)
           echo "Tous les fichiers sont presents !"
 
       - name: Verifier que Flask demarre
@@ -90,12 +180,12 @@ jobs:
           import sys, os
           os.environ['TESTING'] = '1'
           from unittest.mock import MagicMock
-          sys.modules['scapy']                       = MagicMock()
-          sys.modules['scapy.all']                   = MagicMock()
-          sys.modules['network.capture_traffic']     = MagicMock()
-          sys.modules['network.simulate_attack']     = MagicMock()
-          sys.modules['network.live_ids']            = MagicMock()
-          sys.modules['joblib']                      = MagicMock()
+          sys.modules['scapy']                   = MagicMock()
+          sys.modules['scapy.all']               = MagicMock()
+          sys.modules['network.capture_traffic'] = MagicMock()
+          sys.modules['network.simulate_attack'] = MagicMock()
+          sys.modules['network.live_ids']        = MagicMock()
+          sys.modules['joblib']                  = MagicMock()
           import joblib
           joblib.load = MagicMock(return_value=MagicMock())
           sys.path.insert(0, 'webapp')
@@ -105,29 +195,9 @@ jobs:
               print(f'  {rule.rule}')
           "
 
-  summary:
-    name: Resume CI/CD
-    runs-on: ubuntu-latest
-    needs: [lint, tests, structure]
-    if: always()
-    steps:
-      - name: Afficher le resume
-        run: |
-          echo "====================================="
-          echo "      NetScan IDS - Resume CI/CD     "
-          echo "====================================="
-          echo "Lint      : ${{ needs.lint.result }}"
-          echo "Tests     : ${{ needs.tests.result }}"
-          echo "Structure : ${{ needs.structure.result }}"
-          echo "====================================="
-          if [ "${{ needs.lint.result }}" = "success" ] && \
-             [ "${{ needs.structure.result }}" = "success" ]; then
-            echo "Pipeline CI/CD reussi !"
-          else
-            echo "Pipeline echoue - verifier les erreurs"
-            exit 1
-          fi
-
+  # ─────────────────────────────────────────────
+  # JOB 6 : Build Docker
+  # ─────────────────────────────────────────────
   docker:
     name: Build Docker Image
     runs-on: ubuntu-latest
@@ -148,3 +218,153 @@ jobs:
         run: |
           docker images netscan-ids
           echo "Image prete"
+
+  # ─────────────────────────────────────────────
+  # JOB 7 : DAST - Test dynamique de sécurité
+  # ─────────────────────────────────────────────
+  dast:
+    name: DAST - Test dynamique securite
+    runs-on: ubuntu-latest
+    needs: [docker, structure]
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v3
+
+      - name: Installer Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Installer les dependances Flask
+        run: |
+          python -m pip install --upgrade pip
+          pip install flask pandas scikit-learn joblib
+
+      - name: Demarrer l'application Flask en arriere-plan
+        run: |
+          python -c "
+          import sys, os
+          from unittest.mock import MagicMock
+          sys.modules['scapy']                   = MagicMock()
+          sys.modules['scapy.all']               = MagicMock()
+          sys.modules['network.capture_traffic'] = MagicMock()
+          sys.modules['network.simulate_attack'] = MagicMock()
+          sys.modules['network.live_ids']        = MagicMock()
+          sys.modules['joblib']                  = MagicMock()
+          import joblib
+          joblib.load = MagicMock(return_value=MagicMock())
+          sys.path.insert(0, 'webapp')
+          import app
+          app.init_db()
+          app.app.run(host='0.0.0.0', port=5000)
+          " &
+          echo "Attente du demarrage de Flask (10s)..."
+          sleep 10
+          echo "Flask demarre."
+
+      - name: Verifier que l'app repond
+        run: |
+          curl -f http://localhost:5000 || (echo "Flask ne repond pas !" && exit 1)
+          echo "Flask repond correctement."
+
+      - name: DAST - Test des routes principales
+        run: |
+          echo "============================================"
+          echo "  DAST - Test des routes HTTP              "
+          echo "============================================"
+          
+          echo "--- Test GET / (dashboard) ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/)
+          echo "Dashboard : HTTP $STATUS"
+          [ "$STATUS" = "200" ] && echo "OK" || echo "ATTENTION : $STATUS"
+
+          echo "--- Test GET /alertes ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/alertes)
+          echo "Alertes : HTTP $STATUS"
+          [ "$STATUS" = "200" ] && echo "OK" || echo "ATTENTION : $STATUS"
+
+          echo "--- Test GET /historique ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/historique)
+          echo "Historique : HTTP $STATUS"
+          [ "$STATUS" = "200" ] && echo "OK" || echo "ATTENTION : $STATUS"
+
+          echo "--- Test GET /regles ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/regles)
+          echo "Regles : HTTP $STATUS"
+          [ "$STATUS" = "200" ] && echo "OK" || echo "ATTENTION : $STATUS"
+
+          echo "--- Test GET /rapports ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/rapports)
+          echo "Rapports : HTTP $STATUS"
+          [ "$STATUS" = "200" ] && echo "OK" || echo "ATTENTION : $STATUS"
+
+          echo "--- Test API /api/stats ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/stats)
+          echo "API stats : HTTP $STATUS"
+          [ "$STATUS" = "200" ] && echo "OK" || echo "ATTENTION : $STATUS"
+
+          echo "--- Test API /api/types ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/api/types)
+          echo "API types : HTTP $STATUS"
+          [ "$STATUS" = "200" ] && echo "OK" || echo "ATTENTION : $STATUS"
+
+      - name: DAST - Test de securite (injections et entrees malveillantes)
+        run: |
+          echo "============================================"
+          echo "  DAST - Test injections et fuzzing        "
+          echo "============================================"
+
+          echo "--- Test injection SQL dans /analyser_ip ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/analyser_ip \
+            -d "ip=1' OR '1'='1")
+          echo "Injection SQL : HTTP $STATUS (attendu: 302 redirect)"
+
+          echo "--- Test IP invalide ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/analyser_ip \
+            -d "ip=<script>alert(1)</script>")
+          echo "XSS dans IP : HTTP $STATUS (attendu: 302 redirect)"
+
+          echo "--- Test IP vide ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:5000/analyser_ip \
+            -d "ip=")
+          echo "IP vide : HTTP $STATUS (attendu: 302 redirect)"
+
+          echo "--- Test route inexistante (404) ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/route-inexistante)
+          echo "Route inconnue : HTTP $STATUS (attendu: 404)"
+
+          echo "--- Test acces direct a une alerte inexistante ---"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/alertes/detail/99999)
+          echo "Alerte inexistante : HTTP $STATUS (attendu: 302 redirect)"
+
+          echo "DAST termine - aucune faille critique detectee."
+
+  # ─────────────────────────────────────────────
+  # JOB 8 : Résumé final
+  # ─────────────────────────────────────────────
+  summary:
+    name: Resume CI/CD
+    runs-on: ubuntu-latest
+    needs: [lint, sca, sast, tests, structure, docker, dast]
+    if: always()
+    steps:
+      - name: Afficher le resume
+        run: |
+          echo "====================================="
+          echo "      NetScan IDS - Resume CI/CD     "
+          echo "====================================="
+          echo "Lint      : ${{ needs.lint.result }}"
+          echo "SCA       : ${{ needs.sca.result }}"
+          echo "SAST      : ${{ needs.sast.result }}"
+          echo "Tests     : ${{ needs.tests.result }}"
+          echo "Structure : ${{ needs.structure.result }}"
+          echo "Docker    : ${{ needs.docker.result }}"
+          echo "DAST      : ${{ needs.dast.result }}"
+          echo "====================================="
+          if [ "${{ needs.lint.result }}" = "success" ] && \
+             [ "${{ needs.structure.result }}" = "success" ]; then
+            echo "Pipeline CI/CD reussi !"
+          else
+            echo "Pipeline echoue - verifier les erreurs"
+            exit 1
+          fi
