@@ -282,21 +282,21 @@ def api_types():
 
 if __name__ == "__main__":
     init_db()
-<<<<<<< Updated upstream
+
     app.run(debug=True)
-=======
+
 
     thread = threading.Thread(target=run_ids)
     thread.daemon = True
     thread.start()
 
-<<<<<<< Updated upstream
+
     app.run(debug=True, use_reloader=False)
->>>>>>> Stashed changes
-=======
+
+
     app.run(
         host=os.environ.get("FLASK_RUN_HOST", "0.0.0.0"),
         port=int(os.environ.get("FLASK_RUN_PORT", "5000")),
         debug=os.environ.get("FLASK_DEBUG", "0") == "1",
     )
->>>>>>> Stashed changes
+
